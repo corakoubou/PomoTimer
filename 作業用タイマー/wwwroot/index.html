@@ -571,11 +571,15 @@
 
             if (state === key && DAILY_KEYS.has(key) && logs.length > 0) {
                 let t = now();
+                const todayStr = today();
                 let last = logs[logs.length - 1];
-                if (!last.end) last.end = t;
+                if (!last.end) {
+                    last.end = t;
+                    last.endDate = todayStr;
+                }
 
                 logs.push({
-                    date: today(),
+                    date: todayStr,
                     type: key,
                     start: t,
                     end: "",
@@ -593,11 +597,15 @@
         function logWork() {
             if (state === "work" && logs.length > 0) {
                 let t = now();
+                const todayStr = today();
                 let last = logs[logs.length - 1];
-                if (!last.end) last.end = t;
+                if (!last.end) {
+                    last.end = t;
+                    last.endDate = todayStr;
+                }
 
                 logs.push({
-                    date: today(),
+                    date: todayStr,
                     type: "work",
                     start: t,
                     end: "",
@@ -615,13 +623,15 @@
             if (state === newState && !(newState === "work" && categoryKey)) return;
 
             let t = now();
+            const todayStr = today();
 
             if (logs.length > 0 && !logs[logs.length - 1].end) {
                 logs[logs.length - 1].end = t;
+                logs[logs.length - 1].endDate = todayStr;
             }
 
             let newLog = {
-                date: today(),
+                date: todayStr,
                 type: newState,
                 start: t,
                 end: "",
@@ -679,11 +689,20 @@
             }
         }
 
-        function diffSeconds(start, end) {
-            let [sh, sm, ss] = start.split(":").map(Number);
-            let [eh, em, es] = end.split(":").map(Number);
-            let st = new Date(); st.setHours(sh, sm, ss, 0);
-            let et = new Date(); et.setHours(eh, em, es, 0);
+        function parseDateTime(dateStr, timeStr) {
+            const [y, m, d] = (dateStr || today()).split(/[\\/]/).map(Number);
+            const [h, min, s] = (timeStr || "00:00:00").split(":").map(Number);
+            const dt = new Date(y, (m || 1) - 1, d || 1);
+            dt.setHours(h || 0, min || 0, s || 0, 0);
+            return dt;
+        }
+
+        function diffSeconds(start, end, startDate, endDate) {
+            const st = parseDateTime(startDate, start);
+            let et = parseDateTime(endDate || startDate, end);
+            if (!endDate && et < st) {
+                et = new Date(et.getTime() + 24 * 60 * 60 * 1000);
+            }
             return Math.max(0, Math.floor((et - st) / 1000));
         }
 
@@ -761,7 +780,7 @@
                 }
 
                 let tdTotal = document.createElement("td");
-                tdTotal.textContent = (log.start && log.end) ? format(diffSeconds(log.start, log.end)) : "";
+                tdTotal.textContent = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.date, log.endDate)) : "";
 
                 let tdImp = document.createElement("td");
                 let textareaImp = document.createElement("textarea");
@@ -835,10 +854,9 @@
                 if (!log.start) return;
 
                 let diff;
-                if (log.end) diff = diffSeconds(log.start, log.end);
+                if (log.end) diff = diffSeconds(log.start, log.end, log.date, log.endDate);
                 else {
-                    let [sh, sm, ss] = log.start.split(":").map(Number);
-                    let st = new Date(); st.setHours(sh, sm, ss, 0);
+                    const st = parseDateTime(log.date, log.start);
                     diff = Math.floor((Date.now() - st.getTime()) / 1000);
                     if (diff < 0) diff = 0;
                 }
@@ -966,7 +984,7 @@
             if (logs.length === 0) { alert("ログがありません。"); return; }
             let header = ["連番", "日付", "状態", "開始", "終了", "合計", "重要メモ", "メモ"];
             let rows = logs.map((log, i) => {
-                let total = (log.start && log.end) ? format(diffSeconds(log.start, log.end)) : "";
+                let total = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.date, log.endDate)) : "";
                 let typeJP = typeToLabel(log.type, log);
 
                 return [
