@@ -7,7 +7,7 @@ builder.Services.AddRazorPages();
 var app = builder.Build();
 
 // ★ 起動するURLを決める（ポートは好きな番号でOK）っす
-var url = "http://localhost:5080";
+var url = "http://localhost:5081";
 app.Urls.Clear();
 app.Urls.Add(url);
 
