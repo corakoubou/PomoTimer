@@ -880,6 +880,9 @@
             let totalRest = totalWork * 12 / 60;
             let bonusBlocks = Math.floor(totalWork / (100 * 60));
             totalRest += bonusBlocks * (30 * 60);
+
+            let fourHourBlocks = Math.floor(totalWork / (4 * 60 * 60));
+            totalRest += fourHourBlocks * (45 * 60);
             document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
 
             let remain = totalRest - totalBreak;
