@@ -274,82 +274,87 @@ function renderLog() {
     let tbody = document.querySelector("#logTable tbody");
     tbody.innerHTML = "";
 
+    // 表の作成
     logs.forEach((log, i) => {
+
+        // 行の作成
         let tr = document.createElement("tr");
 
-        let td0 = document.createElement("td");
-        td0.textContent = i + 1;
-
+        // 行要素の作成（連番、日付、状態、開始、終了、合計、重要メモ、メモ）
+        let tdRenban = document.createElement("td");
         let tdDate = document.createElement("td");
-        tdDate.textContent = log.date || today();
-
         let tdType = document.createElement("td");
+        let tdStart = document.createElement("td");
+        let tdEnd = document.createElement("td");
+        let tdTotal = document.createElement("td");
+        let tdImp = document.createElement("td");
+        let tdNote = document.createElement("td");
+        let tdDel = document.createElement("td");
+
+        // 行要素の内容設定
+
+        // 連番・日付・状態
+        tdRenban.textContent = i + 1;
+        tdDate.textContent = log.date || today();
         tdType.textContent = typeToLabel(log.type, log);
 
-        let tdStart = document.createElement("td");
+        // 開始・終了
         if (state === "paused") {
-            let inputStart = document.createElement("input");
-            inputStart.type = "text";
-            inputStart.className = "time-edit col-start";
-            inputStart.placeholder = "HH:MM:SS";
-            inputStart.value = log.start || "";
+            // 一時停止の場合、開始・終了を編集可能にする
+            let inputStart          = document.createElement("input");
+            let inputEnd            = document.createElement("input");
+            inputStart.type         = "text";
+            inputEnd.type           = "text";
+            inputStart.className    = "time-edit col-start";
+            inputEnd.className      = "time-edit col-end";
+            inputStart.placeholder  = "HH:MM:SS";
+            inputEnd.placeholder    = "HH:MM:SS";
+            inputStart.value        = log.start || "";
+            inputEnd.value          = log.end || "";
             inputStart.onchange = (e) => {
                 const v = normalizeTimeInputValue(e.target.value);
                 logs[i].start = v;
                 e.target.value = v;
                 save(); renderStats();
             };
-            tdStart.appendChild(inputStart);
-        } else {
-            tdStart.textContent = log.start || "";
-        }
-
-        let tdEnd = document.createElement("td");
-        if (state === "paused") {
-            let inputEnd = document.createElement("input");
-            inputEnd.type = "text";
-            inputEnd.className = "time-edit col-end";
-            inputEnd.placeholder = "HH:MM:SS";
-            inputEnd.value = log.end || "";
             inputEnd.onchange = (e) => {
                 const v = normalizeTimeInputValue(e.target.value);
                 logs[i].end = v;
                 e.target.value = v;
                 save(); renderStats();
             };
+            tdStart.appendChild(inputStart);
             tdEnd.appendChild(inputEnd);
         } else {
+            // それ以外の場合はラベル表示
+            tdStart.textContent = log.start || "";
             tdEnd.textContent = log.end || "";
         }
 
-        let tdTotal = document.createElement("td");
+        // 合計
         tdTotal.textContent = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.date, log.endDate)) : "";
 
-        let tdImp = document.createElement("td");
+        // 重要メモ
         let textareaImp = document.createElement("textarea");
         textareaImp.className = "important-note";
         textareaImp.value = log.important || "";
         textareaImp.oninput = () => { logs[i].important = textareaImp.value; save(); };
         tdImp.appendChild(textareaImp);
 
-        let tdNote = document.createElement("td");
+        // メモ
         let textarea = document.createElement("textarea");
         textarea.className = "note";
         textarea.value = log.note || "";
         textarea.oninput = () => { logs[i].note = textarea.value; save(); };
         tdNote.appendChild(textarea);
 
-        let tdDel = document.createElement("td");
+        // 削除ボタン
         let delBtn = document.createElement("button");
         delBtn.textContent = "削除";
         delBtn.className = "btn-delete";
-
-        // ★ここが修正点：行削除で logs が 0 になったら state 等を初期化
         delBtn.onclick = () => {
             const wasDeletingLastOpen = (i === logs.length - 1) && !logs[i].end;
-
             logs.splice(i, 1);
-
             if (logs.length === 0 || wasDeletingLastOpen) {
                 state = "paused";
                 contStart = null;
@@ -358,15 +363,14 @@ function renderLog() {
                 currentCategoryLabel = "";
                 currentDailyLabel = "";
             }
-
             save();
             renderLog();
             renderStats();
         };
-
         tdDel.appendChild(delBtn);
 
-        tr.appendChild(td0);
+        // 行要素を行に追加
+        tr.appendChild(tdRenban);
         tr.appendChild(tdDate);
         tr.appendChild(tdType);
         tr.appendChild(tdStart);
@@ -376,6 +380,7 @@ function renderLog() {
         tr.appendChild(tdNote);
         tr.appendChild(tdDel);
 
+        // 行を表に追加
         tbody.appendChild(tr);
     });
 }
