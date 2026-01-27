@@ -205,6 +205,8 @@ function normalizeDateInputValue(value) {
 
 // 状態変更処理
 function changeState(newState, categoryKey = null, categoryLabel = "") {
+
+    // 同じ状態かつ作業状態でない場合は何もしない（）
     if (state === newState && !(newState === "work" && categoryKey)) return;
 
     let t = now();
@@ -505,7 +507,7 @@ function renderStats() {
 
 }
 
-/// 保存・読み込み
+/// 保存
 function save() {
     localStorage.setItem("workTimerLogs", JSON.stringify(logs));
     localStorage.setItem("workTimerState", state);
