@@ -54,6 +54,19 @@ function normalizeTimeInputValue(value) {
     return `${h}:${m}:${s}`;
 }
 
+// 日付入力値を正規化
+function normalizeDateInputValue(value) {
+    if (!value) return "";
+    const parts = value.replace(/[^0-9]/g, " ").trim().split(/\s+/).filter(p => p !== "");
+    if (parts.length === 0) return "";
+    let year = parts[0];
+    if (year.length === 2) year = `20${year}`;
+    const y = parseInt(year, 10) || new Date().getFullYear();
+    const m = parseInt(parts[1], 10) || 1;
+    const d = parseInt(parts[2], 10) || 1;
+    return `${y}/${pad(m)}/${pad(d)}`;
+}
+
 // #endregion
 
 // #endregion
@@ -74,7 +87,8 @@ function normalizeTimeInputValue(value) {
             }
 
             logs.push({
-                date: todayStr,
+                startDate: todayStr,
+                endDate: "",
                 type: key,
                 start: t,
                 end: "",
@@ -110,7 +124,8 @@ function normalizeTimeInputValue(value) {
             }
 
             logs.push({
-                date: todayStr,
+                startDate: todayStr,
+                endDate: "",
                 type: "work",
                 start: t,
                 end: "",
@@ -141,14 +156,15 @@ function normalizeTimeInputValue(value) {
     // CSV出力ボタン押下
     function exportCSV() {
         if (logs.length === 0) { alert("ログがありません。"); return; }
-        let header = ["連番", "日付", "状態", "開始", "終了", "合計", "重要メモ", "メモ"];
+        let header = ["連番", "開始日付", "終了日付", "状態", "開始", "終了", "合計", "重要メモ", "メモ"];
         let rows = logs.map((log, i) => {
-            let total = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.date, log.endDate)) : "";
+            let total = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.startDate, log.endDate)) : "";
             let typeJP = typeToLabel(log.type, log);
 
             return [
                 i + 1,
-                log.date || "",
+                log.startDate || "",
+                log.endDate || "",
                 typeJP,
                 log.start || "",
                 log.end || "",
@@ -200,7 +216,8 @@ function changeState(newState, categoryKey = null, categoryLabel = "") {
     }
 
     let newLog = {
-        date: todayStr,
+        startDate: todayStr,
+        endDate: "",
         type: newState,
         start: t,
         end: "",
@@ -280,9 +297,10 @@ function renderLog() {
         // 行の作成
         let tr = document.createElement("tr");
 
-        // 行要素の作成（連番、日付、状態、開始、終了、合計、重要メモ、メモ）
+        // 行要素の作成（連番、開始日付、終了日付、状態、開始、終了、合計、重要メモ、メモ）
         let tdRenban = document.createElement("td");
-        let tdDate = document.createElement("td");
+        let tdStartDate = document.createElement("td");
+        let tdEndDate = document.createElement("td");
         let tdType = document.createElement("td");
         let tdStart = document.createElement("td");
         let tdEnd = document.createElement("td");
@@ -295,22 +313,45 @@ function renderLog() {
 
         // 連番・日付・状態
         tdRenban.textContent = i + 1;
-        tdDate.textContent = log.date || today();
         tdType.textContent = typeToLabel(log.type, log);
 
         // 開始・終了
         if (state === "paused") {
             // 一時停止の場合、開始・終了を編集可能にする
-            let inputStart          = document.createElement("input");
-            let inputEnd            = document.createElement("input");
-            inputStart.type         = "text";
-            inputEnd.type           = "text";
-            inputStart.className    = "time-edit col-start";
-            inputEnd.className      = "time-edit col-end";
-            inputStart.placeholder  = "HH:MM:SS";
-            inputEnd.placeholder    = "HH:MM:SS";
-            inputStart.value        = log.start || "";
-            inputEnd.value          = log.end || "";
+            tdStartDate.textContent = "";
+            tdEndDate.textContent = "";
+            let inputStartDate = document.createElement("input");
+            let inputEndDate = document.createElement("input");
+            let inputStart = document.createElement("input");
+            let inputEnd = document.createElement("input");
+            inputStartDate.type = "text";
+            inputEndDate.type = "text";
+            inputStart.type = "text";
+            inputEnd.type = "text";
+            inputStartDate.className = "date-edit col-start-date";
+            inputEndDate.className = "date-edit col-end-date";
+            inputStart.className = "time-edit col-start";
+            inputEnd.className = "time-edit col-end";
+            inputStartDate.placeholder = "YYYY/MM/DD";
+            inputEndDate.placeholder = "YYYY/MM/DD";
+            inputStart.placeholder = "HH:MM:SS";
+            inputEnd.placeholder = "HH:MM:SS";
+            inputStartDate.value = log.startDate || "";
+            inputEndDate.value = log.endDate || "";
+            inputStart.value = log.start || "";
+            inputEnd.value = log.end || "";
+            inputStartDate.onchange = (e) => {
+                const v = normalizeDateInputValue(e.target.value);
+                logs[i].startDate = v;
+                e.target.value = v;
+                save(); renderStats();
+            };
+            inputEndDate.onchange = (e) => {
+                const v = normalizeDateInputValue(e.target.value);
+                logs[i].endDate = v;
+                e.target.value = v;
+                save(); renderStats();
+            };
             inputStart.onchange = (e) => {
                 const v = normalizeTimeInputValue(e.target.value);
                 logs[i].start = v;
@@ -323,16 +364,20 @@ function renderLog() {
                 e.target.value = v;
                 save(); renderStats();
             };
+            tdStartDate.appendChild(inputStartDate);
+            tdEndDate.appendChild(inputEndDate);
             tdStart.appendChild(inputStart);
             tdEnd.appendChild(inputEnd);
         } else {
             // それ以外の場合はラベル表示
+            tdStartDate.textContent = log.startDate || today();
+            tdEndDate.textContent = log.endDate || "";
             tdStart.textContent = log.start || "";
             tdEnd.textContent = log.end || "";
         }
 
         // 合計
-        tdTotal.textContent = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.date, log.endDate)) : "";
+        tdTotal.textContent = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.startDate, log.endDate)) : "";
 
         // 重要メモ
         let textareaImp = document.createElement("textarea");
@@ -371,7 +416,8 @@ function renderLog() {
 
         // 行要素を行に追加
         tr.appendChild(tdRenban);
-        tr.appendChild(tdDate);
+        tr.appendChild(tdStartDate);
+        tr.appendChild(tdEndDate);
         tr.appendChild(tdType);
         tr.appendChild(tdStart);
         tr.appendChild(tdEnd);
@@ -403,9 +449,9 @@ function renderStats() {
         if (!log.start) return;
 
         let diff;
-        if (log.end) diff = diffSeconds(log.start, log.end, log.date, log.endDate);
+        if (log.end) diff = diffSeconds(log.start, log.end, log.startDate, log.endDate);
         else {
-            const st = parseDateTime(log.date, log.start);
+            const st = parseDateTime(log.startDate, log.start);
             diff = Math.floor((Date.now() - st.getTime()) / 1000);
             if (diff < 0) diff = 0;
         }
@@ -483,7 +529,14 @@ function save() {
 // 読み込み
 function load() {
     let l = localStorage.getItem("workTimerLogs");
-    if (l) logs = JSON.parse(l);
+    if (l) {
+        logs = JSON.parse(l).map(log => {
+            if (!log.startDate && log.date) log.startDate = log.date;
+            if (!log.startDate) log.startDate = today();
+            if (!log.endDate && log.end) log.endDate = log.startDate;
+            return log;
+        });
+    }
 
     let s = localStorage.getItem("workTimerState");
     if (s) state = s;

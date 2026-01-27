@@ -366,8 +366,12 @@ textarea.note {
     width: 40px;
 }
 
-.col-date {
-    width: 100px;
+.col-start-date {
+    width: 110px;
+}
+
+.col-end-date {
+    width: 110px;
 }
 
 .col-type {
@@ -401,6 +405,22 @@ textarea.note {
 input.time-edit {
     width: 100%;
     max-width: 70px;
+    height: 20px;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    background: #1e1e1e;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+input.date-edit {
+    width: 100%;
+    max-width: 100px;
     height: 20px;
     font-size: 0.8rem;
     text-align: center;
