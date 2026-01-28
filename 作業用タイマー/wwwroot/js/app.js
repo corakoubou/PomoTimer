@@ -3,10 +3,6 @@ let logs = [];
 let contStart = null;
 let notified = false;
 
-let currentCategoryKey = "";
-let currentCategoryLabel = "";
-let currentDailyLabel = "";
-
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
 // #region プライベート
@@ -75,8 +71,6 @@ function normalizeDateInputValue(value) {
 
     // 日常ボタン押下
     function startDaily(key, label) {
-        currentDailyLabel = label || typeToLabel(key, {});
-
         if (state === key && DAILY_KEYS.has(key) && logs.length > 0) {
             let t = now();
             const todayStr = today();
@@ -92,7 +86,7 @@ function normalizeDateInputValue(value) {
                 type: key,
                 start: t,
                 end: "",
-                important: currentDailyLabel,
+                important: "",
                 note: ""
             });
 
@@ -146,9 +140,6 @@ function normalizeDateInputValue(value) {
             state = "paused";
             contStart = null;
             notified = false;
-            currentCategoryKey = "";
-            currentCategoryLabel = "";
-            currentDailyLabel = "";
             save(); renderLog(); renderStats();
         }
     }
@@ -231,21 +222,6 @@ function changeState(newState, categoryKey = null, categoryLabel = "") {
         newLog.categoryKey = categoryKey;
         newLog.categoryLabel = categoryLabel;
         newLog.important = categoryLabel;
-
-        currentCategoryKey = categoryKey;
-        currentCategoryLabel = categoryLabel;
-
-        currentDailyLabel = "";
-    } else {
-        currentCategoryKey = "";
-        currentCategoryLabel = "";
-
-        if (DAILY_KEYS.has(newState)) {
-            if (!currentDailyLabel) currentDailyLabel = typeToLabel(newState, {});
-            newLog.important = currentDailyLabel;
-        } else {
-            currentDailyLabel = "";
-        }
     }
 
     logs.push(newLog);
@@ -406,9 +382,6 @@ function renderLog() {
                 state = "paused";
                 contStart = null;
                 notified = false;
-                currentCategoryKey = "";
-                currentCategoryLabel = "";
-                currentDailyLabel = "";
             }
             save();
             renderLog();
@@ -436,8 +409,8 @@ function renderLog() {
 // 統計表示更新(基本情報は常に更新)
 function renderStats() {
     let statusText;
-    if (state === "work") statusText = currentCategoryLabel || "作業";
-    else if (DAILY_KEYS.has(state)) statusText = currentDailyLabel || typeToLabel(state, {});
+    if (state === "work") statusText = "作業";
+    else if (DAILY_KEYS.has(state)) statusText = typeToLabel(state, {});
     else statusText = typeToLabel(state, {});
     document.getElementById("status").textContent = statusText;
 
@@ -509,11 +482,10 @@ function renderStats() {
 
 /// 保存
 function save() {
+
+
     localStorage.setItem("workTimerLogs", JSON.stringify(logs));
     localStorage.setItem("workTimerState", state);
-    localStorage.setItem("workTimerCurrentCategoryKey", currentCategoryKey);
-    localStorage.setItem("workTimerCurrentCategoryLabel", currentCategoryLabel);
-    localStorage.setItem("workTimerCurrentDailyLabel", currentDailyLabel);
 
     ["cat-daily", "cat-work"].forEach(id => {
         const el = document.getElementById(id);
@@ -543,14 +515,6 @@ function load() {
     let s = localStorage.getItem("workTimerState");
     if (s) state = s;
 
-    let ck = localStorage.getItem("workTimerCurrentCategoryKey");
-    let cl = localStorage.getItem("workTimerCurrentCategoryLabel");
-    if (ck !== null) currentCategoryKey = ck;
-    if (cl !== null) currentCategoryLabel = cl;
-
-    let dl = localStorage.getItem("workTimerCurrentDailyLabel");
-    if (dl !== null) currentDailyLabel = dl;
-
     ["cat-daily", "cat-work"].forEach(id => {
         const v = localStorage.getItem("workTimerCollapse_" + id);
         if (v === null) return;
@@ -566,24 +530,6 @@ function load() {
         if (!el) return;
         el.dataset.collapsed = (v === "1") ? "true" : "false";
     });
-
-    if (logs.length > 0) {
-        let last = logs[logs.length - 1];
-
-        if (last.type === "work" && !last.end) {
-            currentCategoryKey = last.categoryKey || currentCategoryKey || "";
-            currentCategoryLabel = last.categoryLabel || last.important || currentCategoryLabel || "";
-            currentDailyLabel = "";
-        } else if (DAILY_KEYS.has(last.type) && !last.end) {
-            currentDailyLabel = last.important || typeToLabel(last.type, {}) || currentDailyLabel || "";
-            currentCategoryKey = "";
-            currentCategoryLabel = "";
-        } else if (state !== "work" && !DAILY_KEYS.has(state)) {
-            currentCategoryKey = "";
-            currentCategoryLabel = "";
-            currentDailyLabel = "";
-        }
-    }
 }
 
 // ウィンドウ閉じる前の確認
