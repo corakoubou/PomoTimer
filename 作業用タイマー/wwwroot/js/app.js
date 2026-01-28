@@ -14,11 +14,13 @@ function setStatus(user) {
   qs("authUid").textContent = user ? user.id : "-";
 }
 
+// ログイン画面の表示
 function showAuthPanel(show) {
   qs("authPanel").style.display = show ? "block" : "none";
   qs("authOpenBtn").style.display = show ? "none" : "block";
 }
 
+// ログインステータスの初期化？
 async function refreshAuthState() {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) {
@@ -30,6 +32,7 @@ async function refreshAuthState() {
   return user;
 }
 
+// 初期表示のログイン画面
 async function initAuthUI() {
   // 初期表示
   showAuthPanel(false);
@@ -112,7 +115,6 @@ async function initAuthUI() {
     setStatus(session?.user ?? null);
   });
 }
-
 
 // 例：起動時にログイン（まずは簡単に固定フォーム等で）
 async function boot() {
