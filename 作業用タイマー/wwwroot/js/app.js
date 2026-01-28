@@ -1,158 +1,217 @@
 ﻿import { signIn, getUser, insertSession } from "./db.js";
 import { supabase } from "./supabaseClient.js";
 
-function qs(id) { return document.getElementById(id); }
-
-function setMsg(text, isError = false) {
-  const el = qs("authMessage");
-  el.textContent = text || "";
-  el.style.color = isError ? "#ffb3b3" : "#ddd";
-}
-
-function setStatus(user) {
-  qs("authStatus").textContent = user ? "ログイン中" : "未ログイン";
-  qs("authUid").textContent = user ? user.id : "-";
-}
-
-// ログイン画面の表示
-function showAuthPanel(show) {
-  qs("authPanel").style.display = show ? "block" : "none";
-  qs("authOpenBtn").style.display = show ? "none" : "block";
-}
-
-// ログインステータスの初期化？
-async function refreshAuthState() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) {
-    setMsg(error.message, true);
-    setStatus(null);
-    return null;
-  }
-  setStatus(user);
-  return user;
-}
-
-// 初期表示のログイン画面
-async function initAuthUI() {
-  // 初期表示
-  showAuthPanel(false);
-  setMsg("");
-
-  qs("authOpenBtn").addEventListener("click", () => showAuthPanel(true));
-  qs("authCloseBtn").addEventListener("click", () => showAuthPanel(false));
-
-  qs("signInBtn").addEventListener("click", async () => {
-    try {
-      setMsg("ログイン中…");
-      const email = qs("authEmail").value.trim();
-      const password = qs("authPassword").value;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      const user = await refreshAuthState();
-      setMsg("ログイン成功っす。");
-      showAuthPanel(false);
-
-      // ここでDBロードなどを呼ぶ（後で差し込み）
-      // await loadSessions(user);
-
-    } catch (e) {
-      setMsg(e.message || String(e), true);
-    }
-  });
-
-  qs("signUpBtn").addEventListener("click", async () => {
-    try {
-      setMsg("登録中…（確認メールが必要な設定の場合はメールを確認）");
-      const email = qs("authEmail").value.trim();
-      const password = qs("authPassword").value;
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      await refreshAuthState();
-      setMsg("登録要求を送ったっす。メール確認が必要なら届いたメールを確認してログインするっす。");
-    } catch (e) {
-      setMsg(e.message || String(e), true);
-    }
-  });
-
-  qs("signOutBtn").addEventListener("click", async () => {
-    try {
-      setMsg("ログアウト中…");
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      await refreshAuthState();
-      setMsg("ログアウトしたっす。");
-      // 必要ならUI側の履歴表示もクリアする
-    } catch (e) {
-      setMsg(e.message || String(e), true);
-    }
-  });
-
-  qs("forgotBtn").addEventListener("click", async () => {
-    try {
-      const email = qs("authEmail").value.trim();
-      if (!email) {
-        setMsg("メールアドレスを入れてから押してほしいっす。", true);
-        return;
-      }
-      setMsg("再設定メール送信中…");
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-      setMsg("再設定メールを送ったっす。受信箱を確認してほしいっす。");
-    } catch (e) {
-      setMsg(e.message || String(e), true);
-    }
-  });
-
-  // 起動時にログイン状態を反映
-  const user = await refreshAuthState();
-  if (!user) {
-    // 未ログインならパネルを出してもいい
-    // showAuthPanel(true);
-  }
-
-  // ログイン状態の変化を追跡（別タブでログイン/ログアウトしても追従）
-  supabase.auth.onAuthStateChange(async (_event, session) => {
-    setStatus(session?.user ?? null);
-  });
-}
-
-// 例：起動時にログイン（まずは簡単に固定フォーム等で）
-async function boot() {
-  // TODO: ここはUIフォームから取るのが本番っす
-  // await signIn(email, password);
-  document.addEventListener("DOMContentLoaded", async () => {
-  await initAuthUI();
-
-  // ここから先は元のPomoTimer初期化
-  // initTimerUI();
-  // bindButtons();
-});
-
-}
-
-boot();
-
-async function saveOneSessionExample() {
-  const user = await getUser();
-
-  const start_at = new Date().toISOString();
-  const end_at = new Date(Date.now() + 25 * 60 * 1000).toISOString();
-
-  await insertSession({
-    user_id: user.id,     // RLSで必須になりがち
-    type: "work",
-    start_at,
-    end_at,
-    duration_sec: 25 * 60
-  });
-}
-
-
 
 let state = "paused";
 let logs = [];
 let contStart = null;
 let notified = false;
+
+let currentUser = null;
+
+// 簡易的なIDセレクタ
+function qs(id) { return document.getElementById(id); }
+
+// メッセージ表示
+function setMsg(text, isError = false) {
+    const el = qs("authMessage");
+    el.textContent = text || "";
+    el.style.color = isError ? "#ffb3b3" : "#ddd";
+}
+
+// ステータス表示の更新
+function setStatus(user) {
+    qs("authStatus").textContent = user ? "ログイン中" : "未ログイン";
+    qs("authUid").textContent = user ? user.id : "-";
+}
+
+// 認証パネルの表示/非表示切替
+function showAuthPanel(show) {
+    qs("authPanel").style.display = show ? "block" : "none";
+    qs("authOpenBtn").style.display = show ? "none" : "block";
+}
+
+// 認証状態の更新
+async function refreshAuthState() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+        setMsg(error.message, true);
+        setStatus(null);
+        return null;
+    }
+    setStatus(user);
+    return user;
+}
+
+// 認証UIの初期化
+async function initAuthUI() {
+    // 初期表示
+    showAuthPanel(false);
+    setMsg("");
+
+    qs("authOpenBtn").addEventListener("click", () => showAuthPanel(true));
+    qs("authCloseBtn").addEventListener("click", () => showAuthPanel(false));
+
+    qs("signInBtn").addEventListener("click", async () => {
+        try {
+            setMsg("ログイン中…");
+            const email = qs("authEmail").value.trim();
+            const password = qs("authPassword").value;
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            const user = await refreshAuthState();
+            currentUser = user;
+            setMsg("ログイン成功っす。");
+            showAuthPanel(false);
+
+            // ここでDBロードなどを呼ぶ（後で差し込み）
+            await loadSessions(currentUser);
+
+        } catch (e) {
+            setMsg(e.message || String(e), true);
+        }
+    });
+
+    qs("signUpBtn").addEventListener("click", async () => {
+        try {
+            setMsg("登録中…（確認メールが必要な設定の場合はメールを確認）");
+            const email = qs("authEmail").value.trim();
+            const password = qs("authPassword").value;
+            const { error } = await supabase.auth.signUp({ email, password });
+            if (error) throw error;
+            await refreshAuthState();
+            setMsg("登録要求を送ったっす。メール確認が必要なら届いたメールを確認してログインするっす。");
+        } catch (e) {
+            setMsg(e.message || String(e), true);
+        }
+    });
+
+    qs("signOutBtn").addEventListener("click", async () => {
+        try {
+            setMsg("ログアウト中…");
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            await refreshAuthState();
+            setMsg("ログアウトしたっす。");
+            // 必要ならUI側の履歴表示もクリアする
+        } catch (e) {
+            setMsg(e.message || String(e), true);
+        }
+    });
+
+    qs("forgotBtn").addEventListener("click", async () => {
+        try {
+            const email = qs("authEmail").value.trim();
+            if (!email) {
+                setMsg("メールアドレスを入れてから押してほしいっす。", true);
+                return;
+            }
+            setMsg("再設定メール送信中…");
+            const { error } = await supabase.auth.resetPasswordForEmail(email);
+            if (error) throw error;
+            setMsg("再設定メールを送ったっす。受信箱を確認してほしいっす。");
+        } catch (e) {
+            setMsg(e.message || String(e), true);
+        }
+    });
+
+    // 起動時の認証状態確認
+    const user = await refreshAuthState();
+    if (!user) {
+        // 未ログインならパネルを出してもいい
+        // showAuthPanel(true);
+    }
+
+    // ログイン状態の変化を追跡（別タブでログイン/ログアウトしても追従）
+    supabase.auth.onAuthStateChange(async (_event, session) => {
+        setStatus(session?.user ?? null);
+    });
+}
+
+
+// M_Timer → logs へ変換して読み込む
+export async function loadSessions(user) {
+    if (!user?.id) throw new Error("userが未取得っす");
+
+    // 取得（user_idで絞る：RLSが効いてれば本来これ無しでも自分の分だけ返るけど、明示しとくっす）
+    const { data, error } = await supabase
+        .from("M_Timer")
+        .select('Id, Renban, Zyoutai, KaisiDate, KaisiTime, SyuuryouDate, SyuuryouTime, user_id')
+        .eq("user_id", user.id)
+        .order("Id", { ascending: true });
+
+    if (error) throw error;
+
+    // 画面側の logs 形式に変換（あなたの既存logsに合わせる）
+    logs = (data ?? []).map((row) => ({
+        // DBの主キーを保持（update/delete用）
+        dbId: row.Id,
+
+        // あなたの表示用フィールドに合わせる
+        startDate: row.KaisiDate || "",
+        endDate: row.SyuuryouDate || "",
+        type: row.Zyoutai || "paused",
+        start: row.KaisiTime || "",
+        end: row.SyuuryouTime || "",
+
+        // 既存コードで使ってる可能性があるので空で用意
+        important: "",
+        note: "",
+
+        // （任意）DBの連番が欲しいなら
+        renban: row.Renban ?? ""
+    }));
+
+    // 画面更新
+    renderLog();
+    renderStats();
+
+    return logs;
+}
+
+// logs の1行分から M_Timer 行を追加してIDを返す
+async function insertMTimerRowFromLog(log) {
+    if (!currentUser?.id) throw new Error("未ログインなのでinsertできないっす");
+
+    // Renbanは「画面の連番」を入れるなら logs.length でもOK（本当はDB側で管理が理想）
+    const renban = String(logs.length); // いまpush済みなら末尾がこの番号になる
+
+    const row = {
+        user_id: currentUser.id,
+        Renban: renban,
+        Zyoutai: log.type,
+        KaisiDate: log.startDate,
+        KaisiTime: log.start,
+        SyuuryouDate: log.endDate || null,
+        SyuuryouTime: log.end || null,
+    };
+
+    const { data, error } = await supabase
+        .from("M_Timer")
+        .insert([row])
+        .select("Id"); // ← 追加された行の主キーを受け取る
+
+    if (error) throw error;
+
+    // 返り値は配列なので先頭
+    return data?.[0]?.Id;
+}
+
+
+
+
+
+// 例：起動時にログイン（まずは簡単に固定フォーム等で）
+async function boot() {
+    document.addEventListener("DOMContentLoaded", async () => {
+        await initAuthUI();
+
+    });
+
+}
+
+boot();
+
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
@@ -220,127 +279,129 @@ function normalizeDateInputValue(value) {
 
 // #region イベントハンドラ
 
-    // 日常ボタン押下
-    function startDaily(key, label) {
-        if (state === key && DAILY_KEYS.has(key) && logs.length > 0) {
-            let t = now();
-            const todayStr = today();
-            let last = logs[logs.length - 1];
-            if (!last.end) {
-                last.end = t;
-                last.endDate = todayStr;
-            }
-
-            logs.push({
-                startDate: todayStr,
-                endDate: "",
-                type: key,
-                start: t,
-                end: "",
-                important: "",
-                note: ""
-            });
-
-            save(); renderLog(); renderStats();
-            return;
+// 日常ボタン押下
+function startDaily(key, label) {
+    if (state === key && DAILY_KEYS.has(key) && logs.length > 0) {
+        let t = now();
+        const todayStr = today();
+        let last = logs[logs.length - 1];
+        if (!last.end) {
+            last.end = t;
+            last.endDate = todayStr;
         }
 
-        changeState(key);
-    }
-
-    // 作業ボタン押下
-    function startCategoryWork(categoryKey, label) { changeState("work", categoryKey, label); }
-
-    // 一時停止ボタン押下
-    function pauseTimer() { changeState("paused"); }
-
-    // 休憩ボタン押下
-    function startBreak() { changeState("break"); }
-
-    // 作業記録ボタン押下
-    function logWork() {
-        if (state === "work" && logs.length > 0) {
-            let t = now();
-            const todayStr = today();
-            let last = logs[logs.length - 1];
-            if (!last.end) {
-                last.end = t;
-                last.endDate = todayStr;
-            }
-
-            logs.push({
-                startDate: todayStr,
-                endDate: "",
-                type: "work",
-                start: t,
-                end: "",
-                important: last.categoryLabel || last.important || "",
-                note: "",
-                categoryKey: last.categoryKey || "",
-                categoryLabel: last.categoryLabel || last.important || ""
-            });
-
-            save(); renderLog(); renderStats();
-        }
-    }
-
-    // リセットボタン押下
-    function resetTimer() {
-        if (confirm("本当にリセットしますか？")) {
-            logs = [];
-            state = "paused";
-            contStart = null;
-            notified = false;
-            save(); renderLog(); renderStats();
-        }
-    }
-
-    // CSV出力ボタン押下
-    function exportCSV() {
-        if (logs.length === 0) { alert("ログがありません。"); return; }
-        let header = ["連番", "開始日付", "終了日付", "状態", "開始", "終了", "合計", "重要メモ", "メモ"];
-        let rows = logs.map((log, i) => {
-            let total = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.startDate, log.endDate)) : "";
-            let typeJP = typeToLabel(log.type, log);
-
-            return [
-                i + 1,
-                log.startDate || "",
-                log.endDate || "",
-                typeJP,
-                log.start || "",
-                log.end || "",
-                total,
-                (log.important || "").replace(/\r?\n/g, ""),
-                (log.note || "").replace(/\r?\n/g, "")
-            ];
+        logs.push({
+            startDate: todayStr,
+            endDate: "",
+            type: key,
+            start: t,
+            end: "",
+            important: "",
+            note: ""
         });
 
-        let csvContent = [header, ...rows].map(e => e.map(v => `"${v}"`).join(",")).join("\r\n");
-        let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement("a");
-        a.href = url;
-        a.download = "work_timer_log.csv";
-        a.click();
-        URL.revokeObjectURL(url);
+
+
+        save(); renderLog(); renderStats();
+        return;
     }
 
-    // 左パネル（カテゴリー）折り畳みトグル押下
-    function toggleCategory(id) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.dataset.collapsed = (el.dataset.collapsed === "true") ? "false" : "true";
-        save();
-    }
+    changeState(key);
+}
 
-    // 右パネル（基本情報）折り畳みトグル押下
-    function togglePanel(id) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.dataset.collapsed = (el.dataset.collapsed === "true") ? "false" : "true";
-        save();
+// 作業ボタン押下
+function startCategoryWork(categoryKey, label) { changeState("work", categoryKey, label); }
+
+// 一時停止ボタン押下
+function pauseTimer() { changeState("paused"); }
+
+// 休憩ボタン押下
+function startBreak() { changeState("break"); }
+
+// 作業記録ボタン押下
+function logWork() {
+    if (state === "work" && logs.length > 0) {
+        let t = now();
+        const todayStr = today();
+        let last = logs[logs.length - 1];
+        if (!last.end) {
+            last.end = t;
+            last.endDate = todayStr;
+        }
+
+        logs.push({
+            startDate: todayStr,
+            endDate: "",
+            type: "work",
+            start: t,
+            end: "",
+            important: last.categoryLabel || last.important || "",
+            note: "",
+            categoryKey: last.categoryKey || "",
+            categoryLabel: last.categoryLabel || last.important || ""
+        });
+
+        save(); renderLog(); renderStats();
     }
+}
+
+// リセットボタン押下
+function resetTimer() {
+    if (confirm("本当にリセットしますか？")) {
+        logs = [];
+        state = "paused";
+        contStart = null;
+        notified = false;
+        save(); renderLog(); renderStats();
+    }
+}
+
+// CSV出力ボタン押下
+function exportCSV() {
+    if (logs.length === 0) { alert("ログがありません。"); return; }
+    let header = ["連番", "開始日付", "終了日付", "状態", "開始", "終了", "合計", "重要メモ", "メモ"];
+    let rows = logs.map((log, i) => {
+        let total = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.startDate, log.endDate)) : "";
+        let typeJP = typeToLabel(log.type, log);
+
+        return [
+            i + 1,
+            log.startDate || "",
+            log.endDate || "",
+            typeJP,
+            log.start || "",
+            log.end || "",
+            total,
+            (log.important || "").replace(/\r?\n/g, ""),
+            (log.note || "").replace(/\r?\n/g, "")
+        ];
+    });
+
+    let csvContent = [header, ...rows].map(e => e.map(v => `"${v}"`).join(",")).join("\r\n");
+    let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = "work_timer_log.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// 左パネル（カテゴリー）折り畳みトグル押下
+function toggleCategory(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.dataset.collapsed = (el.dataset.collapsed === "true") ? "false" : "true";
+    save();
+}
+
+// 右パネル（基本情報）折り畳みトグル押下
+function togglePanel(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.dataset.collapsed = (el.dataset.collapsed === "true") ? "false" : "true";
+    save();
+}
 
 // #endregion
 
