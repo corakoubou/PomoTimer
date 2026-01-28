@@ -367,15 +367,15 @@ textarea.note {
 }
 
 .col-start-date {
-    width: 110px;
+    width: 100px;
 }
 
 .col-end-date {
-    width: 110px;
+    width: 100px;
 }
 
 .col-type {
-    width: 120px;
+    width: 80px;
 }
 
 .col-start {

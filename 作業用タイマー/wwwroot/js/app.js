@@ -1,4 +1,153 @@
-﻿let state = "paused";
+﻿import { signIn, getUser, insertSession } from "./db.js";
+import { supabase } from "./supabaseClient.js";
+
+function qs(id) { return document.getElementById(id); }
+
+function setMsg(text, isError = false) {
+  const el = qs("authMessage");
+  el.textContent = text || "";
+  el.style.color = isError ? "#ffb3b3" : "#ddd";
+}
+
+function setStatus(user) {
+  qs("authStatus").textContent = user ? "ログイン中" : "未ログイン";
+  qs("authUid").textContent = user ? user.id : "-";
+}
+
+function showAuthPanel(show) {
+  qs("authPanel").style.display = show ? "block" : "none";
+  qs("authOpenBtn").style.display = show ? "none" : "block";
+}
+
+async function refreshAuthState() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) {
+    setMsg(error.message, true);
+    setStatus(null);
+    return null;
+  }
+  setStatus(user);
+  return user;
+}
+
+async function initAuthUI() {
+  // 初期表示
+  showAuthPanel(false);
+  setMsg("");
+
+  qs("authOpenBtn").addEventListener("click", () => showAuthPanel(true));
+  qs("authCloseBtn").addEventListener("click", () => showAuthPanel(false));
+
+  qs("signInBtn").addEventListener("click", async () => {
+    try {
+      setMsg("ログイン中…");
+      const email = qs("authEmail").value.trim();
+      const password = qs("authPassword").value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      const user = await refreshAuthState();
+      setMsg("ログイン成功っす。");
+      showAuthPanel(false);
+
+      // ここでDBロードなどを呼ぶ（後で差し込み）
+      // await loadSessions(user);
+
+    } catch (e) {
+      setMsg(e.message || String(e), true);
+    }
+  });
+
+  qs("signUpBtn").addEventListener("click", async () => {
+    try {
+      setMsg("登録中…（確認メールが必要な設定の場合はメールを確認）");
+      const email = qs("authEmail").value.trim();
+      const password = qs("authPassword").value;
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      await refreshAuthState();
+      setMsg("登録要求を送ったっす。メール確認が必要なら届いたメールを確認してログインするっす。");
+    } catch (e) {
+      setMsg(e.message || String(e), true);
+    }
+  });
+
+  qs("signOutBtn").addEventListener("click", async () => {
+    try {
+      setMsg("ログアウト中…");
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      await refreshAuthState();
+      setMsg("ログアウトしたっす。");
+      // 必要ならUI側の履歴表示もクリアする
+    } catch (e) {
+      setMsg(e.message || String(e), true);
+    }
+  });
+
+  qs("forgotBtn").addEventListener("click", async () => {
+    try {
+      const email = qs("authEmail").value.trim();
+      if (!email) {
+        setMsg("メールアドレスを入れてから押してほしいっす。", true);
+        return;
+      }
+      setMsg("再設定メール送信中…");
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      setMsg("再設定メールを送ったっす。受信箱を確認してほしいっす。");
+    } catch (e) {
+      setMsg(e.message || String(e), true);
+    }
+  });
+
+  // 起動時にログイン状態を反映
+  const user = await refreshAuthState();
+  if (!user) {
+    // 未ログインならパネルを出してもいい
+    // showAuthPanel(true);
+  }
+
+  // ログイン状態の変化を追跡（別タブでログイン/ログアウトしても追従）
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    setStatus(session?.user ?? null);
+  });
+}
+
+
+// 例：起動時にログイン（まずは簡単に固定フォーム等で）
+async function boot() {
+  // TODO: ここはUIフォームから取るのが本番っす
+  // await signIn(email, password);
+  document.addEventListener("DOMContentLoaded", async () => {
+  await initAuthUI();
+
+  // ここから先は元のPomoTimer初期化
+  // initTimerUI();
+  // bindButtons();
+});
+
+}
+
+boot();
+
+async function saveOneSessionExample() {
+  const user = await getUser();
+
+  const start_at = new Date().toISOString();
+  const end_at = new Date(Date.now() + 25 * 60 * 1000).toISOString();
+
+  await insertSession({
+    user_id: user.id,     // RLSで必須になりがち
+    type: "work",
+    start_at,
+    end_at,
+    duration_sec: 25 * 60
+  });
+}
+
+
+
+let state = "paused";
 let logs = [];
 let contStart = null;
 let notified = false;
@@ -391,10 +540,10 @@ function renderLog() {
 
         // 行要素を行に追加
         tr.appendChild(tdRenban);
-        tr.appendChild(tdStartDate);
-        tr.appendChild(tdEndDate);
         tr.appendChild(tdType);
+        tr.appendChild(tdStartDate);
         tr.appendChild(tdStart);
+        tr.appendChild(tdEndDate);
         tr.appendChild(tdEnd);
         tr.appendChild(tdTotal);
         tr.appendChild(tdImp);
@@ -483,7 +632,6 @@ function renderStats() {
 /// 保存
 function save() {
 
-
     localStorage.setItem("workTimerLogs", JSON.stringify(logs));
     localStorage.setItem("workTimerState", state);
 
@@ -547,3 +695,13 @@ load();
 renderLog();
 renderStats();
 setInterval(() => { renderStats(); }, 1000);
+
+window.startBreak = startBreak;
+window.pauseTimer = pauseTimer;
+window.resetTimer = resetTimer;
+window.startDaily = startDaily;
+window.startCategoryWork = startCategoryWork;
+window.logWork = logWork;
+window.exportCSV = exportCSV;
+window.toggleCategory = toggleCategory;
+window.togglePanel = togglePanel;

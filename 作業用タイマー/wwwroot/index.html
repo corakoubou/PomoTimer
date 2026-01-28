@@ -8,6 +8,58 @@
     <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
+
+<!-- Login Panel -->
+<section id="authPanel" style="display:none; position:fixed; top:12px; right:12px; z-index:9999; width:320px; padding:12px; border:1px solid rgba(255,255,255,0.15); border-radius:12px; background:rgba(20,20,24,0.92); backdrop-filter: blur(6px);">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+    <strong style="font-size:14px;">ログイン</strong>
+    <button id="authCloseBtn" type="button" style="border:none; background:transparent; color:#ccc; cursor:pointer;">×</button>
+  </div>
+
+  <div id="authMessage" style="margin:8px 0; font-size:12px; color:#ddd;"></div>
+
+  <label style="display:block; font-size:12px; margin-top:8px;">Email</label>
+  <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"
+    style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:#111218; color:#eee;" />
+
+  <label style="display:block; font-size:12px; margin-top:8px;">Password</label>
+  <input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••"
+    style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:#111218; color:#eee;" />
+
+  <div style="display:flex; gap:8px; margin-top:10px;">
+    <button id="signInBtn" type="button"
+      style="flex:1; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:#2a5bd7; color:#fff; cursor:pointer;">
+      ログイン
+    </button>
+    <button id="signUpBtn" type="button"
+      style="flex:1; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:#1d1f2a; color:#fff; cursor:pointer;">
+      新規登録
+    </button>
+  </div>
+
+  <div style="display:flex; gap:8px; margin-top:8px;">
+    <button id="signOutBtn" type="button"
+      style="flex:1; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:#3a1d1d; color:#fff; cursor:pointer;">
+      ログアウト
+    </button>
+    <button id="forgotBtn" type="button"
+      style="flex:1; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:#1d1f2a; color:#fff; cursor:pointer;">
+      パスワード再設定
+    </button>
+  </div>
+
+  <div style="margin-top:10px; font-size:11px; color:#bbb;">
+    <div>状態: <span id="authStatus">未ログイン</span></div>
+    <div style="word-break:break-all;">UID: <span id="authUid">-</span></div>
+  </div>
+</section>
+
+<!-- small launcher button (optional) -->
+<button id="authOpenBtn" type="button"
+  style="position:fixed; top:12px; right:12px; z-index:9998; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:#111218; color:#fff; cursor:pointer;">
+  ログイン
+</button>
+
     <div class="main">
         <div class="top-row">
             <div class="controls">
@@ -87,10 +139,10 @@
                 <thead>
                     <tr>
                         <th class="col-index">連番</th>
-                        <th class="col-start-date">開始日付</th>
-                        <th class="col-end-date">終了日付</th>
                         <th class="col-type">状態</th>
+                        <th class="col-start-date">開始日付</th>
                         <th class="col-start">開始</th>
+                        <th class="col-end-date">終了日付</th>
                         <th class="col-end">終了</th>
                         <th class="col-total">合計</th>
                         <th class="col-important">重要メモ</th>
@@ -102,6 +154,6 @@
             </table>
         </div>
     </div>
-    <script src="./js/app.js" defer></script>
+    <script type="module" src="./js/app.js"></script>
 </body>
 </html>
