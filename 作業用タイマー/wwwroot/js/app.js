@@ -310,7 +310,7 @@ function startDaily(key, label) {
 }
 
 // 作業ボタン押下
-function startCategoryWork(categoryKey, label) { changeState("work", categoryKey, label); }
+function startCategoryWork() { changeState("work"); }
 
 // 一時停止ボタン押下
 function pauseTimer() { changeState("paused"); }
@@ -335,10 +335,8 @@ function logWork() {
             type: "work",
             start: t,
             end: "",
-            important: last.categoryLabel || last.important || "",
+            important: last.important || "",
             note: "",
-            categoryKey: last.categoryKey || "",
-            categoryLabel: last.categoryLabel || last.important || ""
         });
 
         save(); renderLog(); renderStats();
@@ -407,10 +405,10 @@ function togglePanel(id) {
 
 
 // 状態変更処理
-function changeState(newState, categoryKey = null, categoryLabel = "") {
+function changeState(newState) {
 
     // 同じ状態かつ作業状態でない場合は何もしない（）
-    if (state === newState && !(newState === "work" && categoryKey)) return;
+    if (state === newState) return;
 
     let t = now();
     const todayStr = today();
@@ -429,12 +427,6 @@ function changeState(newState, categoryKey = null, categoryLabel = "") {
         important: "",
         note: ""
     };
-
-    if (newState === "work" && categoryKey) {
-        newLog.categoryKey = categoryKey;
-        newLog.categoryLabel = categoryLabel;
-        newLog.important = categoryLabel;
-    }
 
     logs.push(newLog);
     state = newState;
@@ -464,7 +456,7 @@ function diffSeconds(start, end, startDate, endDate) {
 
 // タイプを日本語ラベルに変換
 function typeToLabel(t, log) {
-    if (t === "work") return log.categoryLabel || log.important || "作業";
+    if (t === "work") return log.important || "作業";
     if (t === "break") return "休憩";
     if (t === "paused") return "一時停止";
     if (t === "game") return "ゲーム";
