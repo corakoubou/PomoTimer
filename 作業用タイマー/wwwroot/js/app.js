@@ -177,38 +177,6 @@ export async function loadSessions(user) {
     return logs;
 }
 
-// logs の1行分から M_Timer 行を追加してIDを返す
-async function insertMTimerRowFromLog(log) {
-    if (!currentUser?.id) throw new Error("未ログインなのでinsertできないっす");
-
-    // Renbanは「画面の連番」を入れるなら logs.length でもOK（本当はDB側で管理が理想）
-    const renban = String(logs.length); // いまpush済みなら末尾がこの番号になる
-
-    const row = {
-        user_id: currentUser.id,
-        Renban: renban,
-        Zyoutai: log.type,
-        KaisiDate: log.startDate,
-        KaisiTime: log.start,
-        SyuuryouDate: log.endDate || null,
-        SyuuryouTime: log.end || null,
-    };
-
-    const { data, error } = await supabase
-        .from("M_Timer")
-        .insert([row])
-        .select("Id"); // ← 追加された行の主キーを受け取る
-
-    if (error) throw error;
-
-    // 返り値は配列なので先頭
-    return data?.[0]?.Id;
-}
-
-
-
-
-
 // 例：起動時にログイン（まずは簡単に固定フォーム等で）
 async function boot() {
     document.addEventListener("DOMContentLoaded", async () => {
@@ -219,7 +187,6 @@ async function boot() {
 }
 
 boot();
-
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
@@ -422,16 +389,18 @@ function togglePanel(id) {
 async function changeState(newState) {
 
     // 同じ状態かつ作業状態でない場合は何もしない（）
-    if (state === newState) return;
+    if (state === newState && !(newState == "work")) return;
 
     let t = now();
     const todayStr = today();
 
+    // 0件以上かつ、一番最後の情報に最終時間が入っていなければ、一番最後の行に情報を更新する形にする
     if (logs.length > 0 && !logs[logs.length - 1].end) {
         logs[logs.length - 1].end = t;
         logs[logs.length - 1].endDate = todayStr;
     }
 
+    // 次の行を追加
     let newLog = {
         startDate: todayStr,
         endDate: "",
@@ -443,8 +412,10 @@ async function changeState(newState) {
     };
 
     logs.push(newLog);
+    // ステータスを更新
     state = newState;
 
+    // 作業ボタンであれば、作業開始時間（連続作業時間を記録するためのもの）を更新
     if (newState === "work") {
         contStart = Date.now();
         notified = false;
@@ -466,6 +437,7 @@ async function changeState(newState) {
     renderStats();
 }
 
+// ログをM_Timerの形式に成形
 function buildMTimerRowFromLog(log, index) {
     return {
         Renban: String(index + 1),
@@ -477,6 +449,7 @@ function buildMTimerRowFromLog(log, index) {
     };
 }
 
+// M_Timerの追加と更新
 async function updateOrInsertMTimerRowFromLog(log, index) {
     if (!currentUser?.id) return;
 
