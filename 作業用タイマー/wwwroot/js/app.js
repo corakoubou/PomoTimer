@@ -117,14 +117,22 @@ async function initAuthUI() {
 
     // 起動時の認証状態確認
     const user = await refreshAuthState();
-    if (!user) {
+    currentUser = user;
+    if (user) {
+        await loadSessions(user);
+    } else {
         // 未ログインならパネルを出してもいい
         // showAuthPanel(true);
     }
 
     // ログイン状態の変化を追跡（別タブでログイン/ログアウトしても追従）
     supabase.auth.onAuthStateChange(async (_event, session) => {
-        setStatus(session?.user ?? null);
+        const nextUser = session?.user ?? null;
+        setStatus(nextUser);
+        currentUser = nextUser;
+        if (nextUser) {
+            await loadSessions(nextUser);
+        }
     });
 }
 
