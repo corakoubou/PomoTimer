@@ -288,7 +288,7 @@ function normalizeDateInputValue(value) {
 // #region イベントハンドラ
 
 // 日常ボタン押下
-function startDaily(key, label) {
+async function startDaily(key, label) {
     if (state === key && DAILY_KEYS.has(key) && logs.length > 0) {
         let t = now();
         const todayStr = today();
@@ -308,26 +308,28 @@ function startDaily(key, label) {
             note: ""
         });
 
-
-
+        if (currentUser) {
+            await updateOrInsertMTimerRowFromLog(last, logs.length - 2);
+            await updateOrInsertMTimerRowFromLog(logs[logs.length - 1], logs.length - 1);
+        }
         save(); renderLog(); renderStats();
         return;
     }
 
-    changeState(key);
+    await changeState(key);
 }
 
 // 作業ボタン押下
-function startCategoryWork() { changeState("work"); }
+async function startCategoryWork() { await changeState("work"); }
 
 // 一時停止ボタン押下
-function pauseTimer() { changeState("paused"); }
+async function pauseTimer() { await changeState("paused"); }
 
 // 休憩ボタン押下
-function startBreak() { changeState("break"); }
+async function startBreak() { await changeState("break"); }
 
 // 作業記録ボタン押下
-function logWork() {
+async function logWork() {
     if (state === "work" && logs.length > 0) {
         let t = now();
         const todayStr = today();
@@ -347,6 +349,10 @@ function logWork() {
             note: "",
         });
 
+        if (currentUser) {
+            await updateOrInsertMTimerRowFromLog(last, logs.length - 2);
+            await updateOrInsertMTimerRowFromLog(logs[logs.length - 1], logs.length - 1);
+        }
         save(); renderLog(); renderStats();
     }
 }
@@ -413,7 +419,7 @@ function togglePanel(id) {
 
 
 // 状態変更処理
-function changeState(newState) {
+async function changeState(newState) {
 
     // 同じ状態かつ作業状態でない場合は何もしない（）
     if (state === newState) return;
@@ -447,9 +453,53 @@ function changeState(newState) {
         notified = false;
     }
 
+    if (currentUser) {
+        const lastLogIndex = logs.length - 2;
+        if (lastLogIndex >= 0) {
+            await updateOrInsertMTimerRowFromLog(logs[lastLogIndex], lastLogIndex);
+        }
+        await updateOrInsertMTimerRowFromLog(newLog, logs.length - 1);
+    }
+
     save();
     renderLog();
     renderStats();
+}
+
+function buildMTimerRowFromLog(log, index) {
+    return {
+        Renban: String(index + 1),
+        Zyoutai: log.type,
+        KaisiDate: log.startDate,
+        KaisiTime: log.start,
+        SyuuryouDate: log.endDate || null,
+        SyuuryouTime: log.end || null,
+    };
+}
+
+async function updateOrInsertMTimerRowFromLog(log, index) {
+    if (!currentUser?.id) return;
+
+    const row = {
+        user_id: currentUser.id,
+        ...buildMTimerRowFromLog(log, index),
+    };
+
+    if (log.dbId) {
+        const { error } = await supabase
+            .from("M_Timer")
+            .update(row)
+            .eq("Id", log.dbId);
+        if (error) throw error;
+        return;
+    }
+
+    const { data, error } = await supabase
+        .from("M_Timer")
+        .insert([row])
+        .select("Id");
+    if (error) throw error;
+    log.dbId = data?.[0]?.Id;
 }
 
 // 2つの日時文字列の差を秒数で計算
