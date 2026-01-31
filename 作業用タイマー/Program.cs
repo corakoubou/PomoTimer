@@ -1,12 +1,14 @@
 using System.Diagnostics;
+using Æ—p^C}[.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddScoped<IDbAccessLogger, DbAccessLogger>();
 
 var app = builder.Build();
 
-// š ‹N“®‚·‚éURL‚ğŒˆ‚ß‚éiƒ|[ƒg‚ÍD‚«‚È”Ô†‚ÅOKj‚Á‚·
+// â˜… èµ·å‹•ã™ã‚‹URLã‚’æ±ºã‚ã‚‹ï¼ˆãƒãƒ¼ãƒˆã¯å¥½ããªç•ªå·ã§OKï¼‰ã£ã™
 var url = "http://localhost:5081";
 app.Urls.Clear();
 app.Urls.Add(url);
@@ -31,7 +33,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
-// š ƒAƒvƒŠ‹N“®Œã‚Éƒuƒ‰ƒEƒU‚ğ©“®‚ÅŠJ‚­ˆ—‚Á‚·
+// â˜… ã‚¢ãƒ—ãƒªèµ·å‹•å¾Œã«ãƒ–ãƒ©ã‚¦ã‚¶ã‚’è‡ªå‹•ã§é–‹ãå‡¦ç†ã£ã™
 app.Lifetime.ApplicationStarted.Register(() =>
 {
     try
@@ -45,7 +47,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     }
     catch
     {
-        // ¸”s‚µ‚Ä‚àƒAƒvƒŠ©‘Ì‚Í“®‚­‚Ì‚Åˆ¬‚è‚Â‚Ô‚µ‚¿‚á‚¤‚Á‚·
+        // å¤±æ•—ã—ã¦ã‚‚ã‚¢ãƒ—ãƒªè‡ªä½“ã¯å‹•ãã®ã§æ¡ã‚Šã¤ã¶ã—ã¡ã‚ƒã†ã£ã™
     }
 });
 
