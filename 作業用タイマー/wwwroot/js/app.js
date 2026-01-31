@@ -171,6 +171,7 @@ export async function loadSessions(user) {
     }));
 
     // 画面更新
+    save();
     renderLog();
     renderStats();
 
@@ -178,11 +179,8 @@ export async function loadSessions(user) {
 }
 
 // logs の1行分から M_Timer 行を追加してIDを返す
-async function insertMTimerRowFromLog(log) {
+async function insertMTimerRowFromLog(log, renban) {
     if (!currentUser?.id) throw new Error("未ログインなのでinsertできないっす");
-
-    // Renbanは「画面の連番」を入れるなら logs.length でもOK（本当はDB側で管理が理想）
-    const renban = String(logs.length); // いまpush済みなら末尾がこの番号になる
 
     const row = {
         user_id: currentUser.id,
@@ -205,6 +203,94 @@ async function insertMTimerRowFromLog(log) {
     return data?.[0]?.Id;
 }
 
+function buildMTimerRow(log, renban) {
+    return {
+        user_id: currentUser.id,
+        Renban: renban,
+        Zyoutai: log.type,
+        KaisiDate: log.startDate,
+        KaisiTime: log.start,
+        SyuuryouDate: log.endDate || null,
+        SyuuryouTime: log.end || null,
+    };
+}
+
+function hasMTimerDiff(row, log, renban) {
+    const endDate = log.endDate || null;
+    const endTime = log.end || null;
+    return String(row.Renban ?? "") !== String(renban)
+        || String(row.Zyoutai ?? "") !== String(log.type ?? "")
+        || String(row.KaisiDate ?? "") !== String(log.startDate ?? "")
+        || String(row.KaisiTime ?? "") !== String(log.start ?? "")
+        || String(row.SyuuryouDate ?? "") !== String(endDate ?? "")
+        || String(row.SyuuryouTime ?? "") !== String(endTime ?? "");
+}
+
+async function syncLocalStorageToDb() {
+    if (!currentUser?.id) return;
+
+    const { data: dbRows, error } = await supabase
+        .from("M_Timer")
+        .select("Id, Renban, Zyoutai, KaisiDate, KaisiTime, SyuuryouDate, SyuuryouTime, user_id")
+        .eq("user_id", currentUser.id)
+        .order("Id", { ascending: true });
+
+    if (error) {
+        console.error("DB同期(取得)失敗:", error.message || error);
+        return;
+    }
+
+    const dbMap = new Map((dbRows ?? []).map((row) => [row.Id, row]));
+    const localIds = new Set();
+
+    for (let i = 0; i < logs.length; i += 1) {
+        const log = logs[i];
+        const renban = String(i + 1);
+        log.renban = renban;
+        const dbId = log.dbId;
+
+        if (dbId && dbMap.has(dbId)) {
+            localIds.add(dbId);
+            const dbRow = dbMap.get(dbId);
+            if (hasMTimerDiff(dbRow, log, renban)) {
+                const patch = buildMTimerRow(log, renban);
+                const { error: updateError } = await supabase
+                    .from("M_Timer")
+                    .update(patch)
+                    .eq("Id", dbId);
+                if (updateError) {
+                    console.error("DB同期(更新)失敗:", updateError.message || updateError);
+                }
+            }
+        } else {
+            try {
+                const newId = await insertMTimerRowFromLog(log, renban);
+                if (newId) {
+                    log.dbId = newId;
+                    localIds.add(newId);
+                }
+            } catch (e) {
+                console.error("DB同期(追加)失敗:", e.message || e);
+            }
+        }
+    }
+
+    const deleteIds = (dbRows ?? [])
+        .map((row) => row.Id)
+        .filter((id) => !localIds.has(id));
+
+    if (deleteIds.length > 0) {
+        const { error: deleteError } = await supabase
+            .from("M_Timer")
+            .delete()
+            .in("Id", deleteIds);
+        if (deleteError) {
+            console.error("DB同期(削除)失敗:", deleteError.message || deleteError);
+        }
+    }
+
+    save();
+}
 
 
 
@@ -758,6 +844,7 @@ load();
 renderLog();
 renderStats();
 setInterval(() => { renderStats(); }, 1000);
+setInterval(() => { syncLocalStorageToDb(); }, 60000);
 
 window.startBreak = startBreak;
 window.pauseTimer = pauseTimer;
