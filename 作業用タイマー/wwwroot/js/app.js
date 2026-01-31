@@ -835,6 +835,16 @@ window.addEventListener("beforeunload", function (e) {
     e.returnValue = "閉じますか？記録は保存されますが進行中の作業は止まります。";
 });
 
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+        void syncLocalStorageToDb();
+    }
+});
+
+window.addEventListener("pagehide", () => {
+    void syncLocalStorageToDb();
+});
+
 // 通知許可リクエスト
 if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
