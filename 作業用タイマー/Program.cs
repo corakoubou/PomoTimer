@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Ɨp^C}[.Services;
+using 作業用タイマー.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
