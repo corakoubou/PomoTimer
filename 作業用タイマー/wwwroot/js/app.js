@@ -1,9 +1,24 @@
 ﻿let state = "paused";
 let logs = [];
 let contStart = null;
-let notified = false;
+let nextWorkNotificationSeconds = 1500;
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
+
+const WORK_CHEER_MESSAGES = [
+    "集中ナイス！その積み重ねが未来を変えるよ💪",
+    "よくやった！完璧じゃなくてOK、継続が最強🔥",
+    "25分クリア！この調子で次も軽やかにいこう🚀",
+    "お疲れさま！一歩ずつ、でも確実に前進してる✨",
+    "すごい集中力！このリズムを大事に続けよう🌟"
+];
+
+function showWorkNotification() {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    const msg = WORK_CHEER_MESSAGES[Math.floor(Math.random() * WORK_CHEER_MESSAGES.length)];
+    new Notification("25分経過です。いったん休憩しましょう☕", { body: msg });
+}
 
 // #region プライベート
 
@@ -139,7 +154,7 @@ function normalizeDateInputValue(value) {
             logs = [];
             state = "paused";
             contStart = null;
-            notified = false;
+            nextWorkNotificationSeconds = 1500;
             save(); renderLog(); renderStats();
         }
     }
@@ -354,10 +369,10 @@ function changeState(newState, categoryKey = null, categoryLabel = "") {
 
     if (newState === "work") {
         contStart = Date.now();
-        notified = false;
+        nextWorkNotificationSeconds = 1500;
     } else {
         contStart = null;
-        notified = false;
+        nextWorkNotificationSeconds = 1500;
     }
 
     save();
@@ -506,7 +521,7 @@ function renderLog() {
             if (logs.length === 0 || wasDeletingLastOpen) {
                 state = "paused";
                 contStart = null;
-                notified = false;
+                nextWorkNotificationSeconds = 1500;
             }
             save();
             renderLog();
@@ -581,11 +596,9 @@ function renderStats() {
     let cont = 0;
     if (state === "work" && contStart) {
         cont = Math.floor((Date.now() - contStart) / 1000);
-        if (cont >= 1500 && !notified) {
-            if (Notification.permission === "granted") {
-                new Notification("休憩しましょう！", { body: "25分作業しました ☕" });
-            }
-            notified = true;
+        while (cont >= nextWorkNotificationSeconds) {
+            showWorkNotification();
+            nextWorkNotificationSeconds += 1500;
         }
     }
     document.getElementById("contWork").textContent = format(cont);
