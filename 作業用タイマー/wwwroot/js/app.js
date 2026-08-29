@@ -5,7 +5,10 @@ let nextWorkNotificationSeconds = 1500;
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
-const REST_EARNING_INTERVAL_SECONDS = 30;
+const REST_EARNING_INTERVAL_SECONDS = {
+    work: 5,
+    job: 30
+};
 const REST_USAGE_INTERVAL_SECONDS = {
     break: 1,
     sleep: 15,
@@ -610,8 +613,9 @@ function renderStats() {
     }
     document.getElementById("contWork").textContent = format(cont);
 
-    // 作業30秒ごとに休憩時間を1秒獲得する
-    let totalRest = Math.floor(totalWork / REST_EARNING_INTERVAL_SECONDS);
+    // 作業は5秒ごと、お仕事は30秒ごとに休憩時間を1秒獲得する
+    let totalRest = Math.floor(totalWork / REST_EARNING_INTERVAL_SECONDS.work)
+        + Math.floor(totalsDaily.job / REST_EARNING_INTERVAL_SECONDS.job);
     let bonusBlocks = Math.floor(totalWork / (100 * 60));
     totalRest += bonusBlocks * (30 * 60);
 
