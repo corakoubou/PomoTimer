@@ -5,6 +5,13 @@ let nextWorkNotificationSeconds = 1500;
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
+const REST_EARNING_INTERVAL_SECONDS = 30;
+const REST_USAGE_INTERVAL_SECONDS = {
+    break: 1,
+    sleep: 15,
+    paused: 5
+};
+
 const WORK_CHEER_MESSAGES = [
     "集中ナイス！その積み重ねが未来を変えるよ💪",
     "よくやった！完璧じゃなくてOK、継続が最強🔥",
@@ -603,7 +610,8 @@ function renderStats() {
     }
     document.getElementById("contWork").textContent = format(cont);
 
-    let totalRest = totalWork * 12 / 60;
+    // 作業30秒ごとに休憩時間を1秒獲得する
+    let totalRest = Math.floor(totalWork / REST_EARNING_INTERVAL_SECONDS);
     let bonusBlocks = Math.floor(totalWork / (100 * 60));
     totalRest += bonusBlocks * (30 * 60);
 
@@ -612,7 +620,11 @@ function renderStats() {
     totalRest += fourHourBlocks * (30 * 60);
     document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
 
-    let remain = totalRest - totalBreak;
+    // 休憩は1秒、睡眠は15秒、一時停止は5秒の経過ごとに権利を1秒消費する
+    const usedRest = Math.floor(totalBreak / REST_USAGE_INTERVAL_SECONDS.break)
+        + Math.floor(totalsDaily.sleep / REST_USAGE_INTERVAL_SECONDS.sleep)
+        + Math.floor(totalPaused / REST_USAGE_INTERVAL_SECONDS.paused);
+    let remain = totalRest - usedRest;
     if (remain < 0) remain = 0;
     document.getElementById("remainRest").textContent = format(Math.floor(remain));
 
