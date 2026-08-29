@@ -6,6 +6,14 @@ let draggedLogIndex = null;
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
+const LOG_TYPE_OPTIONS = [
+    { value: "work", label: "作業" },
+    { value: "paused", label: "一時停止" },
+    { value: "break", label: "休憩" },
+    { value: "job", label: "お仕事" },
+    { value: "sleep", label: "睡眠" }
+];
+
 const REST_EARNING_INTERVAL_SECONDS = {
     work: 5,
     job: 30
@@ -415,6 +423,32 @@ function typeToLabel(t, log) {
     return t;
 }
 
+// 表のドロップダウンから指定した行の状態を更新
+function updateLogType(index, newType) {
+    const log = logs[index];
+    if (!log || !LOG_TYPE_OPTIONS.some(option => option.value === newType)) return;
+
+    log.type = newType;
+    if (newType === "work") {
+        log.categoryKey = "work";
+        log.categoryLabel = "作業";
+    } else {
+        delete log.categoryKey;
+        delete log.categoryLabel;
+    }
+
+    // 記録中の最新行を変更した場合は、現在の状態にも反映する
+    if (index === logs.length - 1 && !log.end) {
+        state = newType;
+        contStart = newType === "work" ? Date.now() : null;
+        nextWorkNotificationSeconds = 1500;
+    }
+
+    save();
+    renderLog();
+    renderStats();
+}
+
 // 指定したログをドラッグ先の位置に移動（記録中の最新ログは移動不可）
 function moveLog(sourceIndex, targetIndex) {
     const latestIndex = logs.length - 1;
@@ -460,7 +494,25 @@ function renderLog() {
 
         // 連番・日付・状態
         tdRenban.textContent = i + 1;
-        tdType.textContent = typeToLabel(log.type, log);
+        const typeSelect = document.createElement("select");
+        typeSelect.className = "log-type-select";
+        typeSelect.setAttribute("aria-label", `${i + 1}行目の状態`);
+        LOG_TYPE_OPTIONS.forEach(({ value, label }) => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = label;
+            typeSelect.appendChild(option);
+        });
+        if (!LOG_TYPE_OPTIONS.some(option => option.value === log.type)) {
+            const currentOption = document.createElement("option");
+            currentOption.value = log.type;
+            currentOption.textContent = typeToLabel(log.type, log);
+            currentOption.disabled = true;
+            typeSelect.prepend(currentOption);
+        }
+        typeSelect.value = log.type;
+        typeSelect.onchange = () => updateLogType(i, typeSelect.value);
+        tdType.appendChild(typeSelect);
 
         // 開始・終了
         if (state === "paused") {
