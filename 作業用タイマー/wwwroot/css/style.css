@@ -362,6 +362,33 @@ textarea.note {
         background: #c82333;
     }
 
+.log-action-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+}
+
+.btn-move {
+    background: #495057;
+    border: none;
+    color: #fff;
+    padding: 0.3rem 0.45rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.btn-move:hover:not(:disabled) {
+    background: #343a40;
+}
+
+.btn-move:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
 .col-index {
     width: 40px;
 }
@@ -399,7 +426,7 @@ textarea.note {
 }
 
 .col-action {
-    width: 70px;
+    width: 150px;
 }
 
 input.time-edit {

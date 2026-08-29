@@ -414,6 +414,21 @@ function typeToLabel(t, log) {
     return t;
 }
 
+// 指定したログを上下に移動（記録中の最新ログは移動不可）
+function moveLog(index, direction) {
+    const targetIndex = index + direction;
+    const latestIndex = logs.length - 1;
+    const hasActiveLatestLog = latestIndex >= 0 && !logs[latestIndex].end;
+    const lastMovableIndex = hasActiveLatestLog ? latestIndex - 1 : latestIndex;
+
+    if (index < 0 || index > lastMovableIndex || targetIndex < 0 || targetIndex > lastMovableIndex) return;
+
+    [logs[index], logs[targetIndex]] = [logs[targetIndex], logs[index]];
+    save();
+    renderLog();
+    renderStats();
+}
+
 // ログ表示更新（下の表の更新（主にボタンを押したときに起動））
 function renderLog() {
     let tbody = document.querySelector("#logTable tbody");
@@ -521,8 +536,39 @@ function renderLog() {
         textarea.oninput = () => { logs[i].note = textarea.value; save(); };
         tdNote.appendChild(textarea);
 
+        // 行移動ボタン（記録中の最新ログは移動不可）
+        const latestIndex = logs.length - 1;
+        const hasActiveLatestLog = latestIndex >= 0 && !logs[latestIndex].end;
+        const lastMovableIndex = hasActiveLatestLog ? latestIndex - 1 : latestIndex;
+        const isActiveLatestLog = hasActiveLatestLog && i === latestIndex;
+
+        let actionButtons = document.createElement("div");
+        actionButtons.className = "log-action-buttons";
+
+        let upBtn = document.createElement("button");
+        upBtn.type = "button";
+        upBtn.textContent = "▲";
+        upBtn.className = "btn-move";
+        upBtn.title = "1行上へ移動";
+        upBtn.setAttribute("aria-label", `${i + 1}行目を上へ移動`);
+        upBtn.disabled = isActiveLatestLog || i === 0;
+        upBtn.onclick = () => moveLog(i, -1);
+
+        let downBtn = document.createElement("button");
+        downBtn.type = "button";
+        downBtn.textContent = "▼";
+        downBtn.className = "btn-move";
+        downBtn.title = "1行下へ移動";
+        downBtn.setAttribute("aria-label", `${i + 1}行目を下へ移動`);
+        downBtn.disabled = isActiveLatestLog || i >= lastMovableIndex;
+        downBtn.onclick = () => moveLog(i, 1);
+
+        actionButtons.appendChild(upBtn);
+        actionButtons.appendChild(downBtn);
+
         // 削除ボタン
         let delBtn = document.createElement("button");
+        delBtn.type = "button";
         delBtn.textContent = "削除";
         delBtn.className = "btn-delete";
         delBtn.onclick = () => {
@@ -537,7 +583,8 @@ function renderLog() {
             renderLog();
             renderStats();
         };
-        tdDel.appendChild(delBtn);
+        actionButtons.appendChild(delBtn);
+        tdDel.appendChild(actionButtons);
 
         // 行要素を行に追加
         tr.appendChild(tdRenban);
