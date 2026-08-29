@@ -2,6 +2,7 @@
 let logs = [];
 let contStart = null;
 let nextWorkNotificationSeconds = 1500;
+let draggedLogIndex = null;
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
@@ -414,16 +415,18 @@ function typeToLabel(t, log) {
     return t;
 }
 
-// 指定したログを上下に移動（記録中の最新ログは移動不可）
-function moveLog(index, direction) {
-    const targetIndex = index + direction;
+// 指定したログをドラッグ先の位置に移動（記録中の最新ログは移動不可）
+function moveLog(sourceIndex, targetIndex) {
     const latestIndex = logs.length - 1;
     const hasActiveLatestLog = latestIndex >= 0 && !logs[latestIndex].end;
     const lastMovableIndex = hasActiveLatestLog ? latestIndex - 1 : latestIndex;
 
-    if (index < 0 || index > lastMovableIndex || targetIndex < 0 || targetIndex > lastMovableIndex) return;
+    if (sourceIndex < 0 || sourceIndex > lastMovableIndex
+        || targetIndex < 0 || targetIndex > lastMovableIndex
+        || sourceIndex === targetIndex) return;
 
-    [logs[index], logs[targetIndex]] = [logs[targetIndex], logs[index]];
+    const [movedLog] = logs.splice(sourceIndex, 1);
+    logs.splice(targetIndex, 0, movedLog);
     save();
     renderLog();
     renderStats();
@@ -439,6 +442,7 @@ function renderLog() {
 
         // 行の作成
         let tr = document.createElement("tr");
+        tr.dataset.logIndex = i;
 
         // 行要素の作成（連番、開始日付、終了日付、状態、開始、終了、合計、重要メモ、メモ）
         let tdRenban = document.createElement("td");
@@ -536,35 +540,52 @@ function renderLog() {
         textarea.oninput = () => { logs[i].note = textarea.value; save(); };
         tdNote.appendChild(textarea);
 
-        // 行移動ボタン（記録中の最新ログは移動不可）
+        // 行移動用のドラッグハンドル（記録中の最新ログは移動不可）
         const latestIndex = logs.length - 1;
         const hasActiveLatestLog = latestIndex >= 0 && !logs[latestIndex].end;
-        const lastMovableIndex = hasActiveLatestLog ? latestIndex - 1 : latestIndex;
         const isActiveLatestLog = hasActiveLatestLog && i === latestIndex;
 
         let actionButtons = document.createElement("div");
         actionButtons.className = "log-action-buttons";
 
-        let upBtn = document.createElement("button");
-        upBtn.type = "button";
-        upBtn.textContent = "▲";
-        upBtn.className = "btn-move";
-        upBtn.title = "1行上へ移動";
-        upBtn.setAttribute("aria-label", `${i + 1}行目を上へ移動`);
-        upBtn.disabled = isActiveLatestLog || i === 0;
-        upBtn.onclick = () => moveLog(i, -1);
+        let dragHandle = document.createElement("span");
+        dragHandle.textContent = "☰";
+        dragHandle.className = "drag-handle";
+        dragHandle.title = isActiveLatestLog ? "記録中の行は移動できません" : "ドラッグして行を移動";
+        dragHandle.setAttribute("aria-label", dragHandle.title);
+        dragHandle.draggable = !isActiveLatestLog;
 
-        let downBtn = document.createElement("button");
-        downBtn.type = "button";
-        downBtn.textContent = "▼";
-        downBtn.className = "btn-move";
-        downBtn.title = "1行下へ移動";
-        downBtn.setAttribute("aria-label", `${i + 1}行目を下へ移動`);
-        downBtn.disabled = isActiveLatestLog || i >= lastMovableIndex;
-        downBtn.onclick = () => moveLog(i, 1);
+        if (isActiveLatestLog) {
+            dragHandle.classList.add("disabled");
+        } else {
+            dragHandle.addEventListener("dragstart", (event) => {
+                draggedLogIndex = i;
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", String(i));
+                tr.classList.add("dragging");
+            });
+            dragHandle.addEventListener("dragend", () => {
+                draggedLogIndex = null;
+                tr.classList.remove("dragging");
+                tbody.querySelectorAll(".drag-over").forEach(row => row.classList.remove("drag-over"));
+            });
 
-        actionButtons.appendChild(upBtn);
-        actionButtons.appendChild(downBtn);
+            tr.addEventListener("dragover", (event) => {
+                if (!Number.isInteger(draggedLogIndex) || draggedLogIndex === i) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+                tr.classList.add("drag-over");
+            });
+            tr.addEventListener("dragleave", () => tr.classList.remove("drag-over"));
+            tr.addEventListener("drop", (event) => {
+                event.preventDefault();
+                tr.classList.remove("drag-over");
+                const sourceIndex = draggedLogIndex;
+                if (Number.isInteger(sourceIndex)) moveLog(sourceIndex, i);
+            });
+        }
+
+        actionButtons.appendChild(dragHandle);
 
         // 削除ボタン
         let delBtn = document.createElement("button");
