@@ -669,7 +669,6 @@ function renderStats() {
     let fourHourBlocks = Math.floor(totalWork / (4 * 60 * 60));
 
     totalRest += fourHourBlocks * (30 * 60);
-    document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
 
     // 休憩は1秒、睡眠は15秒、一時停止は5秒の経過ごとに権利を1秒消費する
     const usedRest = Math.floor(totalBreak / REST_USAGE_INTERVAL_SECONDS.break)
@@ -677,6 +676,7 @@ function renderStats() {
         + Math.floor(totalPaused / REST_USAGE_INTERVAL_SECONDS.paused);
     let remain = totalRest - usedRest;
     if (remain < 0) remain = 0;
+    document.getElementById("totalRest").textContent = format(Math.floor(remain));
     document.getElementById("remainRest").textContent = format(Math.floor(remain));
 
 }
