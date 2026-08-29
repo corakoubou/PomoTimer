@@ -370,23 +370,40 @@ textarea.note {
     white-space: nowrap;
 }
 
-.btn-move {
+.drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: #495057;
-    border: none;
     color: #fff;
-    padding: 0.3rem 0.45rem;
+    width: 1.8rem;
+    height: 1.8rem;
     border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.8rem;
+    cursor: grab;
+    font-size: 1rem;
+    user-select: none;
 }
 
-.btn-move:hover:not(:disabled) {
+.drag-handle:hover:not(.disabled) {
     background: #343a40;
 }
 
-.btn-move:disabled {
+.drag-handle:active:not(.disabled) {
+    cursor: grabbing;
+}
+
+.drag-handle.disabled {
     cursor: not-allowed;
     opacity: 0.35;
+}
+
+#logTable tbody tr.dragging {
+    opacity: 0.4;
+}
+
+#logTable tbody tr.drag-over td {
+    border-top: 2px solid #60a5fa;
+    background: #35435b;
 }
 
 .col-index {
