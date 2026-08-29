@@ -422,6 +422,23 @@ textarea.note {
     width: 120px;
 }
 
+.log-type-select {
+    width: 100%;
+    min-width: 6.5rem;
+    padding: 0.3rem 1.7rem 0.3rem 0.45rem;
+    color: #fff;
+    background: #1e1e1e;
+    border: 1px solid #666;
+    border-radius: 4px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.log-type-select:focus {
+    outline: 2px solid #60a5fa;
+    outline-offset: 1px;
+}
+
 .col-start {
     width: 90px;
 }
