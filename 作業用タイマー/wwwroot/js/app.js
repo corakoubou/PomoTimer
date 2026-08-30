@@ -740,7 +740,7 @@ function renderStats() {
     // 作業は5秒ごと、お仕事は30秒ごとに休憩時間を1秒獲得する
     let totalRest = Math.floor(totalWork / REST_EARNING_INTERVAL_SECONDS.work)
         + Math.floor(totalsDaily.job / REST_EARNING_INTERVAL_SECONDS.job);
-    let bonusBlocks = Math.floor(totalWork / (100 * 60));
+    let bonusBlocks = Math.floor(totalWork / (90 * 60));
     totalRest += bonusBlocks * (30 * 60);
 
     let fourHourBlocks = Math.floor(totalWork / (4 * 60 * 60));
