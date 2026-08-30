@@ -48,10 +48,12 @@ function pad(n) { return String(n).padStart(2, '0'); }
 
 // 秒数をHH:MM:SS形式に変換
 function format(t) {
-    let h = Math.floor(t / 3600);
-    let m = Math.floor((t % 3600) / 60);
-    let s = t % 60;
-    return pad(h) + ":" + pad(m) + ":" + pad(s);
+    const sign = t < 0 ? "-" : "";
+    const absoluteSeconds = Math.abs(t);
+    let h = Math.floor(absoluteSeconds / 3600);
+    let m = Math.floor((absoluteSeconds % 3600) / 60);
+    let s = absoluteSeconds % 60;
+    return sign + pad(h) + ":" + pad(m) + ":" + pad(s);
 }
 
 // 現在時刻をHH:MM:SS形式で取得
@@ -748,7 +750,6 @@ function renderStats() {
         + Math.floor(totalsDaily.sleep / REST_USAGE_INTERVAL_SECONDS.sleep)
         + Math.floor(totalPaused / REST_USAGE_INTERVAL_SECONDS.paused);
     let remain = totalRest - usedRest;
-    if (remain < 0) remain = 0;
     document.getElementById("totalRest").textContent = format(Math.floor(remain));
     document.getElementById("remainRest").textContent = format(Math.floor(remain));
 
