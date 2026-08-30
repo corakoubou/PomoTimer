@@ -647,6 +647,8 @@ function renderLog() {
         delBtn.textContent = "削除";
         delBtn.className = "btn-delete";
         delBtn.onclick = () => {
+            if (!confirm("このログを削除しますか？\nこの操作は取り消せません。")) return;
+
             const wasDeletingLastOpen = (i === logs.length - 1) && !logs[i].end;
             logs.splice(i, 1);
             if (logs.length === 0 || wasDeletingLastOpen) {
