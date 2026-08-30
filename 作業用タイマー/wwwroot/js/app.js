@@ -752,7 +752,7 @@ function renderStats() {
         + Math.floor(totalsDaily.sleep / REST_USAGE_INTERVAL_SECONDS.sleep)
         + Math.floor(totalPaused / REST_USAGE_INTERVAL_SECONDS.paused);
     let remain = totalRest - usedRest;
-    document.getElementById("totalRest").textContent = format(Math.floor(remain));
+    document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
     document.getElementById("remainRest").textContent = format(Math.floor(remain));
 
 }
