@@ -516,66 +516,55 @@ function renderLog() {
         typeSelect.onchange = () => updateLogType(i, typeSelect.value);
         tdType.appendChild(typeSelect);
 
-        // 開始・終了
-        if (state === "paused") {
-            // 一時停止の場合、開始・終了を編集可能にする
-            tdStartDate.textContent = "";
-            tdEndDate.textContent = "";
-            let inputStartDate = document.createElement("input");
-            let inputEndDate = document.createElement("input");
-            let inputStart = document.createElement("input");
-            let inputEnd = document.createElement("input");
-            inputStartDate.type = "text";
-            inputEndDate.type = "text";
-            inputStart.type = "text";
-            inputEnd.type = "text";
-            inputStartDate.className = "date-edit col-start-date";
-            inputEndDate.className = "date-edit col-end-date";
-            inputStart.className = "time-edit col-start";
-            inputEnd.className = "time-edit col-end";
-            inputStartDate.placeholder = "YYYY/MM/DD";
-            inputEndDate.placeholder = "YYYY/MM/DD";
-            inputStart.placeholder = "HH:MM:SS";
-            inputEnd.placeholder = "HH:MM:SS";
-            inputStartDate.value = log.startDate || "";
-            inputEndDate.value = log.endDate || "";
-            inputStart.value = log.start || "";
-            inputEnd.value = log.end || "";
-            inputStartDate.onchange = (e) => {
-                const v = normalizeDateInputValue(e.target.value);
-                logs[i].startDate = v;
-                e.target.value = v;
-                save(); renderStats();
-            };
-            inputEndDate.onchange = (e) => {
-                const v = normalizeDateInputValue(e.target.value);
-                logs[i].endDate = v;
-                e.target.value = v;
-                save(); renderStats();
-            };
-            inputStart.onchange = (e) => {
-                const v = normalizeTimeInputValue(e.target.value);
-                logs[i].start = v;
-                e.target.value = v;
-                save(); renderStats();
-            };
-            inputEnd.onchange = (e) => {
-                const v = normalizeTimeInputValue(e.target.value);
-                logs[i].end = v;
-                e.target.value = v;
-                save(); renderStats();
-            };
-            tdStartDate.appendChild(inputStartDate);
-            tdEndDate.appendChild(inputEndDate);
-            tdStart.appendChild(inputStart);
-            tdEnd.appendChild(inputEnd);
-        } else {
-            // それ以外の場合はラベル表示
-            tdStartDate.textContent = log.startDate || today();
-            tdEndDate.textContent = log.endDate || "";
-            tdStart.textContent = log.start || "";
-            tdEnd.textContent = log.end || "";
-        }
+        // 開始・終了（タイマーの状態にかかわらず編集可能）
+        let inputStartDate = document.createElement("input");
+        let inputEndDate = document.createElement("input");
+        let inputStart = document.createElement("input");
+        let inputEnd = document.createElement("input");
+        inputStartDate.type = "text";
+        inputEndDate.type = "text";
+        inputStart.type = "text";
+        inputEnd.type = "text";
+        inputStartDate.className = "date-edit col-start-date";
+        inputEndDate.className = "date-edit col-end-date";
+        inputStart.className = "time-edit col-start";
+        inputEnd.className = "time-edit col-end";
+        inputStartDate.placeholder = "YYYY/MM/DD";
+        inputEndDate.placeholder = "YYYY/MM/DD";
+        inputStart.placeholder = "HH:MM:SS";
+        inputEnd.placeholder = "HH:MM:SS";
+        inputStartDate.value = log.startDate || "";
+        inputEndDate.value = log.endDate || "";
+        inputStart.value = log.start || "";
+        inputEnd.value = log.end || "";
+        inputStartDate.onchange = (e) => {
+            const v = normalizeDateInputValue(e.target.value);
+            logs[i].startDate = v;
+            e.target.value = v;
+            save(); renderStats();
+        };
+        inputEndDate.onchange = (e) => {
+            const v = normalizeDateInputValue(e.target.value);
+            logs[i].endDate = v;
+            e.target.value = v;
+            save(); renderStats();
+        };
+        inputStart.onchange = (e) => {
+            const v = normalizeTimeInputValue(e.target.value);
+            logs[i].start = v;
+            e.target.value = v;
+            save(); renderStats();
+        };
+        inputEnd.onchange = (e) => {
+            const v = normalizeTimeInputValue(e.target.value);
+            logs[i].end = v;
+            e.target.value = v;
+            save(); renderStats();
+        };
+        tdStartDate.appendChild(inputStartDate);
+        tdEndDate.appendChild(inputEndDate);
+        tdStart.appendChild(inputStart);
+        tdEnd.appendChild(inputEnd);
 
         // 合計
         tdTotal.textContent = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.startDate, log.endDate)) : "";
