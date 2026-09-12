@@ -16,7 +16,8 @@ const LOG_TYPE_OPTIONS = [
 
 const REST_EARNING_INTERVAL_SECONDS = {
     work: 5,
-    job: 30
+    job: 30,
+    exercise: 3
 };
 const REST_USAGE_INTERVAL_SECONDS = {
     break: 1,
@@ -726,9 +727,10 @@ function renderStats() {
     }
     document.getElementById("contWork").textContent = format(cont);
 
-    // 作業は5秒ごと、お仕事は30秒ごとに休憩時間を1秒獲得する
+    // 作業は5秒ごと、お仕事は30秒ごと、運動は3秒ごとに休憩時間を1秒獲得する
     let totalRest = Math.floor(totalWork / REST_EARNING_INTERVAL_SECONDS.work)
-        + Math.floor(totalsDaily.job / REST_EARNING_INTERVAL_SECONDS.job);
+        + Math.floor(totalsDaily.job / REST_EARNING_INTERVAL_SECONDS.job)
+        + Math.floor(totalsDaily.exercise / REST_EARNING_INTERVAL_SECONDS.exercise);
     let bonusBlocks = Math.floor(totalWork / (100 * 60));
     totalRest += bonusBlocks * (30 * 60);
 
