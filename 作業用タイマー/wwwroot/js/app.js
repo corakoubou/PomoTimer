@@ -3,6 +3,10 @@ let logs = [];
 let contStart = null;
 let nextWorkNotificationSeconds = 1500;
 let draggedLogIndex = null;
+let mainView = "log";
+let scheduleMode = "day";
+let scheduleUnit = 30;
+let scheduleDate = new Date();
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
@@ -19,6 +23,20 @@ const LOG_TYPE_OPTIONS = [
     { value: "secret", label: "秘密" },
     { value: "sleep", label: "睡眠" }
 ];
+
+const SCHEDULE_COLORS = {
+    "work:strict": "#ef4444",
+    "work:focused": "#3b82f6",
+    "work:relaxed": "#8b5cf6",
+    paused: "#9ca3af",
+    break: "#f59e0b",
+    game: "#22c55e",
+    outing: "#14b8a6",
+    exercise: "#84cc16",
+    job: "#60a5fa",
+    secret: "#a1a1aa",
+    sleep: "#7c3aed"
+};
 
 const DEFAULT_REST_SETTINGS = {
     "work:strict": { label: "ガチガチ集中作業", interval: 3, amount: 1, direction: 1 },
@@ -747,6 +765,216 @@ function renderLog() {
     });
 }
 
+function toDateInputValue(date) {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function startOfDay(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date, amount) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + amount);
+    return result;
+}
+
+function formatScheduleDate(date, includeYear = true) {
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    const datePart = includeYear
+        ? `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
+        : `${date.getMonth() + 1}/${date.getDate()}`;
+    return `${datePart} (${weekdays[date.getDay()]})`;
+}
+
+function getScheduleRange() {
+    const selected = startOfDay(scheduleDate);
+    if (scheduleMode === "week") {
+        const mondayOffset = (selected.getDay() + 6) % 7;
+        const start = addDays(selected, -mondayOffset);
+        return { start, end: addDays(start, 7), days: 7 };
+    }
+    return { start: selected, end: addDays(selected, 1), days: 1 };
+}
+
+function getLogInterval(log) {
+    if (!log.start) return null;
+    const start = parseDateTime(log.startDate, log.start);
+    let end;
+    if (log.end) {
+        end = parseDateTime(log.endDate || log.startDate, log.end);
+        if (!log.endDate && end < start) end = new Date(end.getTime() + 86400000);
+    } else {
+        end = new Date();
+    }
+    return end > start ? { start, end } : null;
+}
+
+function scheduleTypeKey(log) {
+    return log.type === "work" ? `work:${log.categoryKey || "relaxed"}` : log.type;
+}
+
+function switchMainView(view) {
+    mainView = view === "schedule" ? "schedule" : "log";
+    document.getElementById("logView").hidden = mainView !== "log";
+    document.getElementById("scheduleView").hidden = mainView !== "schedule";
+    ["log", "schedule"].forEach(name => {
+        const button = document.getElementById(`${name}ViewButton`);
+        const active = mainView === name;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+    });
+    localStorage.setItem("workTimerMainView", mainView);
+    if (mainView === "schedule") renderSchedule();
+}
+
+function setScheduleMode(mode) {
+    scheduleMode = mode === "week" ? "week" : "day";
+    saveSchedulePreferences();
+    renderSchedule();
+}
+
+function setScheduleUnit(unit) {
+    scheduleUnit = [10, 30, 60].includes(Number(unit)) ? Number(unit) : 30;
+    saveSchedulePreferences();
+    renderSchedule();
+}
+
+function moveScheduleDate(direction) {
+    scheduleDate = addDays(scheduleDate, direction * (scheduleMode === "week" ? 7 : 1));
+    saveSchedulePreferences();
+    renderSchedule();
+}
+
+function goToToday() {
+    scheduleDate = new Date();
+    saveSchedulePreferences();
+    renderSchedule();
+}
+
+function saveSchedulePreferences() {
+    localStorage.setItem("workTimerScheduleMode", scheduleMode);
+    localStorage.setItem("workTimerScheduleUnit", String(scheduleUnit));
+    localStorage.setItem("workTimerScheduleDate", toDateInputValue(scheduleDate));
+}
+
+function renderSchedule() {
+    const grid = document.getElementById("scheduleGrid");
+    if (!grid) return;
+
+    document.querySelectorAll("[data-schedule-mode]").forEach(button => {
+        button.classList.toggle("active", button.dataset.scheduleMode === scheduleMode);
+    });
+    document.querySelectorAll("[data-schedule-unit]").forEach(button => {
+        button.classList.toggle("active", Number(button.dataset.scheduleUnit) === scheduleUnit);
+    });
+    document.getElementById("scheduleDate").value = toDateInputValue(scheduleDate);
+
+    const range = getScheduleRange();
+    const lastDay = addDays(range.end, -1);
+    document.getElementById("scheduleRangeTitle").textContent = scheduleMode === "day"
+        ? formatScheduleDate(range.start)
+        : `${formatScheduleDate(range.start)} 〜 ${formatScheduleDate(lastDay)}`;
+
+    const visibleLogs = [];
+    const totals = new Map();
+    logs.forEach(log => {
+        const interval = getLogInterval(log);
+        if (!interval) return;
+        const clippedStart = new Date(Math.max(interval.start.getTime(), range.start.getTime()));
+        const clippedEnd = new Date(Math.min(interval.end.getTime(), range.end.getTime()));
+        if (clippedEnd <= clippedStart) return;
+        visibleLogs.push({ log, start: clippedStart, end: clippedEnd });
+        const key = scheduleTypeKey(log);
+        totals.set(key, (totals.get(key) || 0) + Math.floor((clippedEnd - clippedStart) / 1000));
+    });
+    renderScheduleSummary(totals, visibleLogs);
+
+    grid.innerHTML = "";
+    grid.style.setProperty("--day-count", String(range.days));
+    grid.style.setProperty("--slot-minutes", String(scheduleUnit));
+    grid.style.setProperty("--slot-height", `${scheduleUnit === 10 ? 14 : scheduleUnit === 30 ? 18 : 30}px`);
+
+    const corner = document.createElement("div");
+    corner.className = "schedule-corner";
+    grid.appendChild(corner);
+    const todayStart = startOfDay(new Date()).getTime();
+    for (let dayIndex = 0; dayIndex < range.days; dayIndex++) {
+        const date = addDays(range.start, dayIndex);
+        const header = document.createElement("div");
+        header.className = "schedule-day-header";
+        if (date.getTime() === todayStart) header.classList.add("today");
+        header.textContent = formatScheduleDate(date, false);
+        grid.appendChild(header);
+    }
+
+    const timeAxis = document.createElement("div");
+    timeAxis.className = "schedule-time-axis";
+    for (let hour = 0; hour < 24; hour++) {
+        const label = document.createElement("span");
+        label.className = "schedule-time-label";
+        label.style.top = `${hour / 24 * 100}%`;
+        label.textContent = `${pad(hour)}:00`;
+        timeAxis.appendChild(label);
+    }
+    grid.appendChild(timeAxis);
+
+    for (let dayIndex = 0; dayIndex < range.days; dayIndex++) {
+        const dayStart = addDays(range.start, dayIndex);
+        const dayEnd = addDays(dayStart, 1);
+        const column = document.createElement("div");
+        column.className = "schedule-day-column";
+        if (dayStart.getTime() === todayStart) column.classList.add("today");
+
+        visibleLogs.forEach(item => {
+            const eventStart = new Date(Math.max(item.start.getTime(), dayStart.getTime()));
+            const eventEnd = new Date(Math.min(item.end.getTime(), dayEnd.getTime()));
+            if (eventEnd <= eventStart) return;
+            const startMinutes = (eventStart - dayStart) / 60000;
+            const durationMinutes = (eventEnd - eventStart) / 60000;
+            const event = document.createElement("div");
+            event.className = "schedule-event";
+            event.style.top = `${startMinutes / scheduleUnit * (scheduleUnit === 10 ? 14 : scheduleUnit === 30 ? 18 : 30)}px`;
+            event.style.height = `${Math.max(4, durationMinutes / scheduleUnit * (scheduleUnit === 10 ? 14 : scheduleUnit === 30 ? 18 : 30))}px`;
+            event.style.setProperty("--event-color", SCHEDULE_COLORS[scheduleTypeKey(item.log)] || "#94a3b8");
+            event.title = `${typeToLabel(item.log.type, item.log)} ${pad(eventStart.getHours())}:${pad(eventStart.getMinutes())}〜${pad(eventEnd.getHours())}:${pad(eventEnd.getMinutes())}`;
+            const name = document.createElement("strong");
+            name.textContent = typeToLabel(item.log.type, item.log);
+            const time = document.createElement("span");
+            time.className = "schedule-event-time";
+            time.textContent = `${pad(eventStart.getHours())}:${pad(eventStart.getMinutes())}〜${eventEnd.getTime() === dayEnd.getTime() ? "24:00" : `${pad(eventEnd.getHours())}:${pad(eventEnd.getMinutes())}`}`;
+            event.append(name, time);
+            column.appendChild(event);
+        });
+        grid.appendChild(column);
+    }
+}
+
+function renderScheduleSummary(totals, visibleLogs) {
+    const summary = document.getElementById("scheduleSummary");
+    summary.innerHTML = "";
+    if (visibleLogs.length === 0) {
+        const empty = document.createElement("span");
+        empty.className = "schedule-empty";
+        empty.textContent = "この期間の記録はありません";
+        summary.appendChild(empty);
+        return;
+    }
+    LOG_TYPE_OPTIONS.forEach(option => {
+        const seconds = totals.get(option.value);
+        if (!seconds) return;
+        const item = document.createElement("div");
+        item.className = "summary-item";
+        item.style.setProperty("--event-color", SCHEDULE_COLORS[option.value]);
+        const label = document.createElement("span");
+        label.textContent = option.label;
+        const duration = document.createElement("strong");
+        duration.textContent = format(seconds);
+        item.append(label, duration);
+        summary.appendChild(item);
+    });
+}
+
 // 統計表示更新(基本情報は常に更新)
 function renderStats() {
     let statusText;
@@ -841,6 +1069,8 @@ function renderStats() {
     document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
     document.getElementById("remainRest").textContent = format(Math.floor(remain));
 
+    if (mainView === "schedule") renderSchedule();
+
 }
 
 /// 保存
@@ -883,6 +1113,16 @@ function load() {
 
     let s = localStorage.getItem("workTimerState");
     if (s) state = s;
+
+    mainView = localStorage.getItem("workTimerMainView") === "schedule" ? "schedule" : "log";
+    scheduleMode = localStorage.getItem("workTimerScheduleMode") === "week" ? "week" : "day";
+    const storedUnit = Number(localStorage.getItem("workTimerScheduleUnit"));
+    scheduleUnit = [10, 30, 60].includes(storedUnit) ? storedUnit : 30;
+    const storedScheduleDate = localStorage.getItem("workTimerScheduleDate");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(storedScheduleDate || "")) {
+        const [year, month, day] = storedScheduleDate.split("-").map(Number);
+        scheduleDate = new Date(year, month - 1, day);
+    }
 
     const storedSettings = localStorage.getItem("workTimerRestSettings");
     if (storedSettings) {
@@ -936,8 +1176,20 @@ if (csvImportInput) {
     });
 }
 
+const scheduleDateInput = document.getElementById("scheduleDate");
+if (scheduleDateInput) {
+    scheduleDateInput.addEventListener("change", (event) => {
+        if (!event.target.value) return;
+        const [year, month, day] = event.target.value.split("-").map(Number);
+        scheduleDate = new Date(year, month - 1, day);
+        saveSchedulePreferences();
+        renderSchedule();
+    });
+}
+
 load();
 renderRestSettings();
 renderLog();
 renderStats();
+switchMainView(mainView);
 setInterval(() => { renderStats(); }, 1000);
