@@ -188,6 +188,75 @@
     line-height: 1.55;
 }
 
+.settings-help {
+    margin: 0 0 0.65rem;
+    color: #d7d7dc;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.rest-settings-header,
+.rest-setting-row {
+    display: grid;
+    grid-template-columns: minmax(9rem, 1.8fr) minmax(4.5rem, 0.75fr) minmax(5.5rem, 1fr) minmax(4.5rem, 0.75fr);
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.rest-settings-header {
+    padding: 0 0.35rem 0.3rem;
+    color: #bfc2ca;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.rest-settings-header span:first-child {
+    text-align: left;
+}
+
+.rest-setting-row {
+    padding: 0.35rem;
+    border-top: 1px solid #555561;
+}
+
+.rest-setting-label {
+    font-size: 0.84rem;
+}
+
+.rest-setting-row input,
+.rest-setting-row select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.35rem;
+    border: 1px solid #686875;
+    border-radius: 5px;
+    background: #24242c;
+    color: #fff;
+    font: inherit;
+}
+
+.controls .btn-settings-reset {
+    display: block;
+    margin: 0.75rem 0.35rem 0.1rem auto;
+    padding: 0.45rem 0.8rem;
+    background: #6c757d;
+    font-size: 0.82rem;
+}
+
+@media (max-width: 520px) {
+    .rest-settings-header,
+    .rest-setting-row {
+        grid-template-columns: minmax(7rem, 1.5fr) repeat(3, minmax(4rem, 1fr));
+        gap: 0.25rem;
+    }
+
+    .rest-setting-row {
+        padding-right: 0;
+        padding-left: 0;
+    }
+}
+
 /* 日常ボタン */
 .btn-game {
     background: #22c55e;

@@ -12,22 +12,32 @@ const LOG_TYPE_OPTIONS = [
     { value: "work:relaxed", label: "まったり作業" },
     { value: "paused", label: "一時停止" },
     { value: "break", label: "休憩" },
+    { value: "game", label: "ゲーム" },
+    { value: "outing", label: "お出かけ" },
+    { value: "exercise", label: "運動" },
     { value: "job", label: "お仕事" },
+    { value: "secret", label: "秘密" },
     { value: "sleep", label: "睡眠" }
 ];
 
-const REST_EARNING_INTERVAL_SECONDS = {
-    strict: 3,
-    focused: 5,
-    relaxed: 6,
-    job: 30,
-    exercise: 3
+const DEFAULT_REST_SETTINGS = {
+    "work:strict": { label: "ガチガチ集中作業", interval: 3, amount: 1, direction: 1 },
+    "work:focused": { label: "集中作業", interval: 5, amount: 1, direction: 1 },
+    "work:relaxed": { label: "まったり作業", interval: 6, amount: 1, direction: 1 },
+    game: { label: "ゲーム", interval: 1, amount: 1, direction: -1 },
+    outing: { label: "お出かけ", interval: 1, amount: 1, direction: -1 },
+    exercise: { label: "運動", interval: 3, amount: 1, direction: 1 },
+    job: { label: "お仕事", interval: 30, amount: 1, direction: 1 },
+    secret: { label: "秘密", interval: 1, amount: 1, direction: -1 },
+    sleep: { label: "睡眠", interval: 15, amount: 1, direction: -1 },
+    break: { label: "休憩", interval: 1, amount: 1, direction: -1 },
+    paused: { label: "一時停止", interval: 5, amount: 1, direction: -1 }
 };
-const REST_USAGE_INTERVAL_SECONDS = {
-    break: 1,
-    sleep: 15,
-    paused: 5
-};
+let restSettings = createDefaultRestSettings();
+
+function createDefaultRestSettings() {
+    return Object.fromEntries(Object.entries(DEFAULT_REST_SETTINGS).map(([key, value]) => [key, { ...value }]));
+}
 
 const WORK_CHEER_MESSAGES = [
     "集中ナイス！その積み重ねが未来を変えるよ💪",
@@ -358,6 +368,71 @@ function normalizeDateInputValue(value) {
         if (!el) return;
         el.dataset.collapsed = (el.dataset.collapsed === "true") ? "false" : "true";
         save();
+    }
+
+    function updateRestSetting(key, field, value) {
+        if (!restSettings[key]) return;
+        if (field === "direction") {
+            restSettings[key].direction = value === "-1" ? -1 : 1;
+        } else {
+            restSettings[key][field] = Math.max(1, Math.floor(Number(value) || 1));
+        }
+        save();
+        renderRestSettings();
+        renderStats();
+    }
+
+    function resetRestSettings() {
+        if (!confirm("休憩時間の増減設定を初期値に戻しますか？")) return;
+        restSettings = createDefaultRestSettings();
+        save();
+        renderRestSettings();
+        renderStats();
+    }
+
+    function renderRestSettings() {
+        const container = document.getElementById("restSettings");
+        if (!container) return;
+        container.innerHTML = "";
+
+        Object.entries(restSettings).forEach(([key, setting]) => {
+            const row = document.createElement("div");
+            row.className = "rest-setting-row";
+
+            const label = document.createElement("span");
+            label.className = "rest-setting-label";
+            label.textContent = setting.label;
+
+            const interval = document.createElement("input");
+            interval.type = "number";
+            interval.min = "1";
+            interval.step = "1";
+            interval.value = setting.interval;
+            interval.setAttribute("aria-label", `${setting.label}の経過秒数`);
+            interval.onchange = () => updateRestSetting(key, "interval", interval.value);
+
+            const direction = document.createElement("select");
+            direction.setAttribute("aria-label", `${setting.label}の増減`);
+            [{ value: "1", label: "増やす" }, { value: "-1", label: "減らす" }].forEach(optionData => {
+                const option = document.createElement("option");
+                option.value = optionData.value;
+                option.textContent = optionData.label;
+                direction.appendChild(option);
+            });
+            direction.value = String(setting.direction);
+            direction.onchange = () => updateRestSetting(key, "direction", direction.value);
+
+            const amount = document.createElement("input");
+            amount.type = "number";
+            amount.min = "1";
+            amount.step = "1";
+            amount.value = setting.amount;
+            amount.setAttribute("aria-label", `${setting.label}の休憩秒数`);
+            amount.onchange = () => updateRestSetting(key, "amount", amount.value);
+
+            row.append(label, interval, direction, amount);
+            container.appendChild(row);
+        });
     }
 
 // #endregion
@@ -749,12 +824,26 @@ function renderStats() {
     }
     document.getElementById("contWork").textContent = format(cont);
 
-    // 作業モードごとの獲得率で休憩時間を獲得する
-    let totalRest = Math.floor(workTotals.strict / REST_EARNING_INTERVAL_SECONDS.strict)
-        + Math.floor(workTotals.focused / REST_EARNING_INTERVAL_SECONDS.focused)
-        + Math.floor(workTotals.relaxed / REST_EARNING_INTERVAL_SECONDS.relaxed)
-        + Math.floor(totalsDaily.job / REST_EARNING_INTERVAL_SECONDS.job)
-        + Math.floor(totalsDaily.exercise / REST_EARNING_INTERVAL_SECONDS.exercise);
+    const durations = {
+        "work:strict": workTotals.strict,
+        "work:focused": workTotals.focused,
+        "work:relaxed": workTotals.relaxed,
+        game: totalsDaily.game,
+        outing: totalsDaily.outing,
+        exercise: totalsDaily.exercise,
+        job: totalsDaily.job,
+        secret: totalsDaily.secret,
+        sleep: totalsDaily.sleep,
+        break: totalBreak,
+        paused: totalPaused
+    };
+    let totalRest = 0;
+    let usedRest = 0;
+    Object.entries(restSettings).forEach(([key, setting]) => {
+        const adjustment = Math.floor((durations[key] || 0) / setting.interval) * setting.amount;
+        if (setting.direction > 0) totalRest += adjustment;
+        else usedRest += adjustment;
+    });
     let bonusBlocks = Math.floor(totalWork / (100 * 60));
     totalRest += bonusBlocks * (30 * 60);
 
@@ -762,10 +851,6 @@ function renderStats() {
 
     totalRest += fourHourBlocks * (30 * 60);
 
-    // 休憩は1秒、睡眠は15秒、一時停止は5秒の経過ごとに権利を1秒消費する
-    const usedRest = Math.floor(totalBreak / REST_USAGE_INTERVAL_SECONDS.break)
-        + Math.floor(totalsDaily.sleep / REST_USAGE_INTERVAL_SECONDS.sleep)
-        + Math.floor(totalPaused / REST_USAGE_INTERVAL_SECONDS.paused);
     let remain = totalRest - usedRest;
     document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
     document.getElementById("remainRest").textContent = format(Math.floor(remain));
@@ -778,8 +863,9 @@ function save() {
 
     localStorage.setItem("workTimerLogs", JSON.stringify(logs));
     localStorage.setItem("workTimerState", state);
+    localStorage.setItem("workTimerRestSettings", JSON.stringify(restSettings));
 
-    ["cat-daily", "cat-work"].forEach(id => {
+    ["cat-daily", "cat-work", "cat-rest-settings"].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         localStorage.setItem("workTimerCollapse_" + id, el.dataset.collapsed === "true" ? "1" : "0");
@@ -812,7 +898,23 @@ function load() {
     let s = localStorage.getItem("workTimerState");
     if (s) state = s;
 
-    ["cat-daily", "cat-work"].forEach(id => {
+    const storedSettings = localStorage.getItem("workTimerRestSettings");
+    if (storedSettings) {
+        try {
+            const parsed = JSON.parse(storedSettings);
+            Object.keys(restSettings).forEach(key => {
+                const stored = parsed[key];
+                if (!stored) return;
+                restSettings[key].interval = Math.max(1, Math.floor(Number(stored.interval) || 1));
+                restSettings[key].amount = Math.max(1, Math.floor(Number(stored.amount) || 1));
+                restSettings[key].direction = Number(stored.direction) === -1 ? -1 : 1;
+            });
+        } catch {
+            restSettings = createDefaultRestSettings();
+        }
+    }
+
+    ["cat-daily", "cat-work", "cat-rest-settings"].forEach(id => {
         const v = localStorage.getItem("workTimerCollapse_" + id);
         if (v === null) return;
         const el = document.getElementById(id);
@@ -849,6 +951,7 @@ if (csvImportInput) {
 }
 
 load();
+renderRestSettings();
 renderLog();
 renderStats();
 setInterval(() => { renderStats(); }, 1000);
