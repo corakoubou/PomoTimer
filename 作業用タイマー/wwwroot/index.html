@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8" />
-    <title>プライベート用タイマー v2.9</title>
+    <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/style.css">
@@ -54,6 +54,20 @@
                             <li><strong>集中作業</strong>：音楽のみ聞いてよし</li>
                             <li><strong>まったり作業</strong>：音楽も聞いてよし、何か配信を見てもよし</li>
                         </ul>
+                    </div>
+                </div>
+                <div class="category" id="cat-rest-settings" data-collapsed="true">
+                    <div class="category-header" onclick="toggleCategory('cat-rest-settings')">
+                        <span class="category-title">休憩時間の増減設定</span>
+                        <span class="category-arrow">▼</span>
+                    </div>
+                    <div class="category-body">
+                        <p class="settings-help">各モードの経過時間に応じて、休憩時間の権利をどれだけ増減させるか設定します。</p>
+                        <div class="rest-settings-header" aria-hidden="true">
+                            <span>モード</span><span>経過秒</span><span>増減</span><span>休憩秒</span>
+                        </div>
+                        <div id="restSettings" class="rest-settings"></div>
+                        <button type="button" class="btn-settings-reset" onclick="resetRestSettings()">初期設定に戻す</button>
                     </div>
                 </div>
             </div>
