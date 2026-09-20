@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8" />
-    <title>プライベート用タイマー v2.8</title>
+    <title>プライベート用タイマー v2.9</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/style.css">
@@ -90,12 +90,19 @@
                     </div>
                     <div class="category-body">
                         <div class="controls-group">
-                            <button class="btn-work" onclick="startCategoryWork()">作業</button>
+                            <button class="btn-work btn-work-strict" onclick="startCategoryWork('work-strict')">ガチガチ集中作業</button>
+                            <button class="btn-work btn-work-focus" onclick="startCategoryWork('work-focus')">集中作業</button>
+                            <button class="btn-work btn-work-relaxed" onclick="startCategoryWork('work-relaxed')">まったり作業</button>
                             <button class="btn-pause" onclick="pauseTimer()">一時停止</button>
                             <button class="btn-away" onclick="startBreak()">休憩</button>
                             <button class="btn-log" onclick="logWork()">作業記録</button>
                             <button class="btn-reset" onclick="resetTimer()">リセット</button>
                             <button class="btn-log" onclick="exportCSV()">CSV出力</button>
+                        </div>
+                        <div class="work-notes" aria-label="作業モードの注意書き">
+                            <div>・ガチガチ集中作業：何も聞かない</div>
+                            <div>・集中作業：音楽のみ聞いてよし</div>
+                            <div>・まったり作業：音楽も聞いてよし、何か配信を見てもよし</div>
                         </div>
                     </div>
                 </div>
