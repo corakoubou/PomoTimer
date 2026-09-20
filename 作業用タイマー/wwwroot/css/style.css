@@ -30,10 +30,7 @@
     display: flex;
     gap: 0.8rem;
     align-items: flex-start;
-    flex: 0 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
+    flex: 0 0 auto;
 }
 
     .top-row .controls {
@@ -215,6 +212,12 @@
 
 .rest-settings-header span:not(:first-child) {
     text-align: center;
+}
+
+.rest-settings {
+    max-height: 15rem;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
 .rest-setting-row {
