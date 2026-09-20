@@ -30,7 +30,10 @@
     display: flex;
     gap: 0.8rem;
     align-items: flex-start;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
     .top-row .controls {
