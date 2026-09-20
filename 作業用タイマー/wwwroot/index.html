@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8" />
-    <title>プライベート用タイマー v2.8</title>
+    <title>プライベート用タイマー v2.9</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/style.css">
@@ -38,7 +38,9 @@
                     </div>
                     <div class="category-body">
                         <div class="controls-group">
-                            <button class="btn-work" onclick="startCategoryWork('work','作業')">作業</button>
+                            <button class="btn-work btn-work-strict" onclick="startCategoryWork('strict','ガチガチ集中作業')">ガチガチ集中作業</button>
+                            <button class="btn-work btn-work-focused" onclick="startCategoryWork('focused','集中作業')">集中作業</button>
+                            <button class="btn-work btn-work-relaxed" onclick="startCategoryWork('relaxed','まったり作業')">まったり作業</button>
                             <button class="btn-pause" onclick="pauseTimer()">一時停止</button>
                             <button class="btn-away" onclick="startBreak()">休憩</button>
                             <button class="btn-log" onclick="logWork()">作業記録</button>
@@ -47,6 +49,11 @@
                             <button class="btn-log" onclick="triggerCSVImport()">CSV読込</button>
                             <input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;">
                         </div>
+                        <ul class="work-notes" aria-label="作業モードの注意書き">
+                            <li><strong>ガチガチ集中作業</strong>：何も聞かない</li>
+                            <li><strong>集中作業</strong>：音楽のみ聞いてよし</li>
+                            <li><strong>まったり作業</strong>：音楽も聞いてよし、何か配信を見てもよし</li>
+                        </ul>
                     </div>
                 </div>
             </div>

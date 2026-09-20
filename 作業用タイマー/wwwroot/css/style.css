@@ -165,6 +165,29 @@
         filter: brightness(0.9);
     }
 
+.btn-work-strict {
+    background: #b91c1c;
+}
+
+.btn-work-focused {
+    background: #2563eb;
+}
+
+.btn-work-relaxed {
+    background: #7c3aed;
+}
+
+.work-notes {
+    width: 100%;
+    margin: 0.55rem 0 0;
+    padding: 0.55rem 0.8rem 0.55rem 2rem;
+    box-sizing: border-box;
+    border-top: 1px solid #5b5b67;
+    color: #d7d7dc;
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
 /* 日常ボタン */
 .btn-game {
     background: #22c55e;
