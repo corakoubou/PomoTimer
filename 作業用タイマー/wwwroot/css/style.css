@@ -454,7 +454,7 @@ tr:nth-child(even) td {
     background: #2f2f38;
 }
 
-textarea.note, textarea.important-note {
+textarea.important-note {
     width: 100%;
     min-height: 2.2em;
     resize: vertical;
@@ -468,11 +468,7 @@ textarea.note, textarea.important-note {
 }
 
 textarea.important-note {
-    max-width: 400px;
-}
-
-textarea.note {
-    max-width: 400px;
+    max-width: 200px;
 }
 
 .btn-delete {
@@ -580,10 +576,8 @@ textarea.note {
 
 .col-important {
     width: 200px;
-}
-
-.col-note {
-    width: 300px;
+    min-width: 200px;
+    max-width: 200px;
 }
 
 .col-action {
