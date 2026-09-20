@@ -137,8 +137,7 @@ function normalizeDateInputValue(value) {
                 type: key,
                 start: t,
                 end: "",
-                important: "",
-                note: ""
+                important: ""
             });
 
             save(); renderLog(); renderStats();
@@ -175,7 +174,6 @@ function normalizeDateInputValue(value) {
                 start: t,
                 end: "",
                 important: last.categoryLabel || last.important || "",
-                note: "",
                 categoryKey: last.categoryKey || "",
                 categoryLabel: last.categoryLabel || last.important || ""
             });
@@ -198,7 +196,7 @@ function normalizeDateInputValue(value) {
     // CSV出力ボタン押下
     function exportCSV() {
         if (logs.length === 0) { alert("ログがありません。"); return; }
-        let header = ["開始日付", "終了日付", "状態", "開始", "終了", "合計", "重要メモ", "メモ"];
+        let header = ["開始日付", "終了日付", "状態", "開始", "終了", "合計", "重要メモ"];
         let rows = logs.map((log) => {
             let total = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.startDate, log.endDate)) : "";
             let typeJP = typeToLabel(log.type, log);
@@ -210,8 +208,7 @@ function normalizeDateInputValue(value) {
                 log.start || "",
                 log.end || "",
                 total,
-                (log.important || "").replace(/\r?\n/g, ""),
-                (log.note || "").replace(/\r?\n/g, "")
+                (log.important || "").replace(/\r?\n/g, "")
             ];
         });
 
@@ -255,7 +252,6 @@ function normalizeDateInputValue(value) {
             const idxStart = getIndex("開始");
             const idxEnd = getIndex("終了");
             const idxImportant = getIndex("重要メモ");
-            const idxNote = getIndex("メモ");
 
             if (idxType === -1 || idxStart === -1) {
                 alert("CSVの列が不足しています（状態, 開始 は必須）。");
@@ -274,8 +270,7 @@ function normalizeDateInputValue(value) {
                     type: mapped.type,
                     start: normalizeTimeInputValue(cols[idxStart] || ""),
                     end: normalizeTimeInputValue(cols[idxEnd] || ""),
-                    important: (cols[idxImportant] || "").trim(),
-                    note: (cols[idxNote] || "").trim()
+                    important: (cols[idxImportant] || "").trim()
                 };
 
                 if (!newLog.start) continue;
@@ -458,8 +453,7 @@ function changeState(newState, categoryKey = null, categoryLabel = "") {
         type: newState,
         start: t,
         end: "",
-        important: "",
-        note: ""
+        important: ""
     };
 
     if (newState === "work" && categoryKey) {
@@ -571,7 +565,7 @@ function renderLog() {
         let tr = document.createElement("tr");
         tr.dataset.logIndex = i;
 
-        // 行要素の作成（連番、開始日付、終了日付、状態、開始、終了、合計、重要メモ、メモ）
+        // 行要素の作成（連番、開始日付、終了日付、状態、開始、終了、合計、重要メモ）
         let tdRenban = document.createElement("td");
         let tdStartDate = document.createElement("td");
         let tdEndDate = document.createElement("td");
@@ -580,7 +574,6 @@ function renderLog() {
         let tdEnd = document.createElement("td");
         let tdTotal = document.createElement("td");
         let tdImp = document.createElement("td");
-        let tdNote = document.createElement("td");
         let tdDel = document.createElement("td");
 
         // 行要素の内容設定
@@ -662,18 +655,12 @@ function renderLog() {
         tdTotal.textContent = (log.start && log.end) ? format(diffSeconds(log.start, log.end, log.startDate, log.endDate)) : "";
 
         // 重要メモ
+        tdImp.className = "col-important";
         let textareaImp = document.createElement("textarea");
         textareaImp.className = "important-note";
         textareaImp.value = log.important || "";
         textareaImp.oninput = () => { logs[i].important = textareaImp.value; save(); };
         tdImp.appendChild(textareaImp);
-
-        // メモ
-        let textarea = document.createElement("textarea");
-        textarea.className = "note";
-        textarea.value = log.note || "";
-        textarea.oninput = () => { logs[i].note = textarea.value; save(); };
-        tdNote.appendChild(textarea);
 
         // 行移動用のドラッグハンドル（記録中の最新ログは移動不可）
         const latestIndex = logs.length - 1;
@@ -753,7 +740,6 @@ function renderLog() {
         tr.appendChild(tdEnd);
         tr.appendChild(tdTotal);
         tr.appendChild(tdImp);
-        tr.appendChild(tdNote);
         tr.appendChild(tdDel);
 
         // 行を表に追加
