@@ -7,7 +7,9 @@ let draggedLogIndex = null;
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
 
 const LOG_TYPE_OPTIONS = [
-    { value: "work", label: "作業" },
+    { value: "work:strict", label: "ガチガチ集中作業" },
+    { value: "work:focused", label: "集中作業" },
+    { value: "work:relaxed", label: "まったり作業" },
     { value: "paused", label: "一時停止" },
     { value: "break", label: "休憩" },
     { value: "job", label: "お仕事" },
@@ -15,7 +17,9 @@ const LOG_TYPE_OPTIONS = [
 ];
 
 const REST_EARNING_INTERVAL_SECONDS = {
-    work: 5,
+    strict: 3,
+    focused: 5,
+    relaxed: 6,
     job: 30,
     exercise: 3
 };
@@ -328,13 +332,16 @@ function normalizeDateInputValue(value) {
             "お仕事": { type: "job" },
             "秘密": { type: "secret" },
             "睡眠": { type: "sleep" },
-            "作業": { type: "work", categoryKey: "work", categoryLabel: "作業" }
+            "ガチガチ集中作業": { type: "work", categoryKey: "strict", categoryLabel: "ガチガチ集中作業" },
+            "集中作業": { type: "work", categoryKey: "focused", categoryLabel: "集中作業" },
+            "まったり作業": { type: "work", categoryKey: "relaxed", categoryLabel: "まったり作業" },
+            "作業": { type: "work", categoryKey: "relaxed", categoryLabel: "まったり作業" }
         };
 
         if (map[value]) return map[value];
 
         // 状態が独自ラベルの場合は作業ログとして取り込む
-        return { type: "work", categoryKey: "work", categoryLabel: value || "作業" };
+        return { type: "work", categoryKey: "relaxed", categoryLabel: value || "まったり作業" };
     }
 
     // 左パネル（カテゴリー）折り畳みトグル押下
@@ -427,14 +434,22 @@ function typeToLabel(t, log) {
 }
 
 // 表のドロップダウンから指定した行の状態を更新
-function updateLogType(index, newType) {
+function updateLogType(index, selectedValue) {
     const log = logs[index];
-    if (!log || !LOG_TYPE_OPTIONS.some(option => option.value === newType)) return;
+    if (!log || !LOG_TYPE_OPTIONS.some(option => option.value === selectedValue)) return;
+
+    const [newType, workCategory] = selectedValue.split(":");
 
     log.type = newType;
     if (newType === "work") {
-        log.categoryKey = "work";
-        log.categoryLabel = "作業";
+        const labels = {
+            strict: "ガチガチ集中作業",
+            focused: "集中作業",
+            relaxed: "まったり作業"
+        };
+        log.categoryKey = workCategory;
+        log.categoryLabel = labels[workCategory];
+        log.important = labels[workCategory];
     } else {
         delete log.categoryKey;
         delete log.categoryLabel;
@@ -506,14 +521,15 @@ function renderLog() {
             option.textContent = label;
             typeSelect.appendChild(option);
         });
-        if (!LOG_TYPE_OPTIONS.some(option => option.value === log.type)) {
+        const selectedType = log.type === "work" ? `work:${log.categoryKey || "relaxed"}` : log.type;
+        if (!LOG_TYPE_OPTIONS.some(option => option.value === selectedType)) {
             const currentOption = document.createElement("option");
             currentOption.value = log.type;
             currentOption.textContent = typeToLabel(log.type, log);
             currentOption.disabled = true;
             typeSelect.prepend(currentOption);
         }
-        typeSelect.value = log.type;
+        typeSelect.value = selectedType;
         typeSelect.onchange = () => updateLogType(i, typeSelect.value);
         tdType.appendChild(typeSelect);
 
@@ -673,12 +689,16 @@ function renderLog() {
 // 統計表示更新(基本情報は常に更新)
 function renderStats() {
     let statusText;
-    if (state === "work") statusText = "作業";
+    if (state === "work") {
+        const activeLog = logs.length > 0 ? logs[logs.length - 1] : null;
+        statusText = activeLog ? typeToLabel("work", activeLog) : "まったり作業";
+    }
     else if (DAILY_KEYS.has(state)) statusText = typeToLabel(state, {});
     else statusText = typeToLabel(state, {});
     document.getElementById("status").textContent = statusText;
 
     let totalWork = 0, totalBreak = 0, totalPaused = 0;
+    const workTotals = { strict: 0, focused: 0, relaxed: 0 };
 
     let totalsDaily = {
         game: 0, outing: 0, exercise: 0, job: 0, secret: 0, sleep: 0
@@ -697,6 +717,8 @@ function renderStats() {
 
         if (log.type === "work") {
             totalWork += diff;
+            const categoryKey = Object.hasOwn(workTotals, log.categoryKey) ? log.categoryKey : "relaxed";
+            workTotals[categoryKey] += diff;
         } else if (log.type === "break") {
             totalBreak += diff;
         } else if (log.type === "paused") {
@@ -727,8 +749,10 @@ function renderStats() {
     }
     document.getElementById("contWork").textContent = format(cont);
 
-    // 作業は5秒ごと、お仕事は30秒ごと、運動は3秒ごとに休憩時間を1秒獲得する
-    let totalRest = Math.floor(totalWork / REST_EARNING_INTERVAL_SECONDS.work)
+    // 作業モードごとの獲得率で休憩時間を獲得する
+    let totalRest = Math.floor(workTotals.strict / REST_EARNING_INTERVAL_SECONDS.strict)
+        + Math.floor(workTotals.focused / REST_EARNING_INTERVAL_SECONDS.focused)
+        + Math.floor(workTotals.relaxed / REST_EARNING_INTERVAL_SECONDS.relaxed)
         + Math.floor(totalsDaily.job / REST_EARNING_INTERVAL_SECONDS.job)
         + Math.floor(totalsDaily.exercise / REST_EARNING_INTERVAL_SECONDS.exercise);
     let bonusBlocks = Math.floor(totalWork / (100 * 60));
@@ -776,6 +800,11 @@ function load() {
             if (!log.startDate && log.date) log.startDate = log.date;
             if (!log.startDate) log.startDate = today();
             if (!log.endDate && log.end) log.endDate = log.startDate;
+            // v2.9より前の作業ログは「まったり作業」として引き継ぐ
+            if (log.type === "work" && !["strict", "focused", "relaxed"].includes(log.categoryKey)) {
+                log.categoryKey = "relaxed";
+                log.categoryLabel = "まったり作業";
+            }
             return log;
         });
     }
