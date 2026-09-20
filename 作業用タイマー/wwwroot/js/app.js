@@ -189,6 +189,16 @@ async function boot() {
 boot();
 
 const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
+const WORK_TYPES = new Set(["work-strict", "work-focus", "work-relaxed"]);
+
+// v2.8以前の "work" は、互換性のためまったり作業として扱う。
+function normalizeWorkType(type) {
+    return type === "work" ? "work-relaxed" : type;
+}
+
+function isWorkType(type) {
+    return WORK_TYPES.has(normalizeWorkType(type));
+}
 
 // #region プライベート
 
@@ -287,7 +297,10 @@ async function startDaily(key, label) {
 }
 
 // 作業ボタン押下
-async function startCategoryWork() { await changeState("work"); }
+async function startCategoryWork(workType) {
+    const type = WORK_TYPES.has(workType) ? workType : "work-relaxed";
+    await changeState(type);
+}
 
 // 一時停止ボタン押下
 async function pauseTimer() { await changeState("paused"); }
@@ -297,7 +310,7 @@ async function startBreak() { await changeState("break"); }
 
 // 作業記録ボタン押下
 async function logWork() {
-    if (state === "work" && logs.length > 0) {
+    if (isWorkType(state) && logs.length > 0) {
         let t = now();
         const todayStr = today();
         let last = logs[logs.length - 1];
@@ -309,7 +322,7 @@ async function logWork() {
         logs.push({
             startDate: todayStr,
             endDate: "",
-            type: "work",
+            type: normalizeWorkType(state),
             start: t,
             end: "",
             important: last.important || "",
@@ -389,7 +402,7 @@ function togglePanel(id) {
 async function changeState(newState) {
 
     // 同じ状態かつ作業状態でない場合は何もしない（）
-    if (state === newState && !(newState == "work")) return;
+    if (state === newState && !isWorkType(newState)) return;
 
     let t = now();
     const todayStr = today();
@@ -416,7 +429,7 @@ async function changeState(newState) {
     state = newState;
 
     // 作業ボタンであれば、作業開始時間（連続作業時間を記録するためのもの）を更新
-    if (newState === "work") {
+    if (isWorkType(newState)) {
         contStart = Date.now();
         notified = false;
     } else {
@@ -487,7 +500,9 @@ function diffSeconds(start, end, startDate, endDate) {
 
 // タイプを日本語ラベルに変換
 function typeToLabel(t, log) {
-    if (t === "work") return log.important || "作業";
+    if (t === "work-strict") return log.important || "ガチガチ集中作業";
+    if (t === "work-focus") return log.important || "集中作業";
+    if (t === "work-relaxed" || t === "work") return log.important || "まったり作業";
     if (t === "break") return "休憩";
     if (t === "paused") return "一時停止";
     if (t === "game") return "ゲーム";
@@ -644,12 +659,13 @@ function renderLog() {
 // 統計表示更新(基本情報は常に更新)
 function renderStats() {
     let statusText;
-    if (state === "work") statusText = "作業";
+    if (isWorkType(state)) statusText = typeToLabel(normalizeWorkType(state), {});
     else if (DAILY_KEYS.has(state)) statusText = typeToLabel(state, {});
     else statusText = typeToLabel(state, {});
     document.getElementById("status").textContent = statusText;
 
     let totalWork = 0, totalBreak = 0, totalPaused = 0;
+    let workTotals = { "work-strict": 0, "work-focus": 0, "work-relaxed": 0 };
 
     let totalsDaily = {
         game: 0, outing: 0, exercise: 0, job: 0, secret: 0, sleep: 0
@@ -666,8 +682,9 @@ function renderStats() {
             if (diff < 0) diff = 0;
         }
 
-        if (log.type === "work") {
+        if (isWorkType(log.type)) {
             totalWork += diff;
+            workTotals[normalizeWorkType(log.type)] += diff;
         } else if (log.type === "break") {
             totalBreak += diff;
         } else if (log.type === "paused") {
@@ -689,7 +706,7 @@ function renderStats() {
     document.getElementById("totalSleep").textContent = format(totalsDaily.sleep);
 
     let cont = 0;
-    if (state === "work" && contStart) {
+    if (isWorkType(state) && contStart) {
         cont = Math.floor((Date.now() - contStart) / 1000);
         if (cont >= 1500 && !notified) {
             if (Notification.permission === "granted") {
@@ -700,8 +717,11 @@ function renderStats() {
     }
     document.getElementById("contWork").textContent = format(cont);
 
-    let totalRest = totalWork * 12 / 60;
-    let bonusBlocks = Math.floor(totalWork / (100 * 60));
+    // 作業モード別の比率で、経過した1秒ごとに休憩の権利を積み上げる。
+    let totalRest = workTotals["work-strict"] / 3
+        + workTotals["work-focus"] / 5
+        + workTotals["work-relaxed"] / 6;
+    let bonusBlocks = Math.floor(totalWork / (90 * 60));
     totalRest += bonusBlocks * (30 * 60);
 
     let fourHourBlocks = Math.floor(totalWork / (4 * 60 * 60));
@@ -742,12 +762,13 @@ function load() {
             if (!log.startDate && log.date) log.startDate = log.date;
             if (!log.startDate) log.startDate = today();
             if (!log.endDate && log.end) log.endDate = log.startDate;
+            log.type = normalizeWorkType(log.type);
             return log;
         });
     }
 
     let s = localStorage.getItem("workTimerState");
-    if (s) state = s;
+    if (s) state = normalizeWorkType(s);
 
     ["cat-daily", "cat-work"].forEach(id => {
         const v = localStorage.getItem("workTimerCollapse_" + id);
