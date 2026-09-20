@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.0.4">
+    <link rel="stylesheet" href="./css/style.css?v=3.1.0">
 </head>
 <body>
     <div class="main">
@@ -105,7 +105,12 @@
                 </div>
             </div>
         </div>
-        <div class="table-container">
+        <section class="history-section" aria-label="作業履歴">
+            <div class="view-switcher" role="tablist" aria-label="表示モード">
+                <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
+                <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
+            </div>
+            <div id="logView" class="table-container view-panel" role="tabpanel" aria-labelledby="logViewButton">
             <table id="logTable">
                 <thead>
                     <tr>
@@ -122,8 +127,37 @@
                 </thead>
                 <tbody></tbody>
             </table>
-        </div>
+            </div>
+            <div id="scheduleView" class="schedule-view view-panel" role="tabpanel" aria-labelledby="scheduleViewButton" hidden>
+                <div class="schedule-toolbar">
+                    <div class="schedule-navigation">
+                        <button type="button" class="schedule-nav-button" onclick="moveScheduleDate(-1)" aria-label="前の期間">‹</button>
+                        <input type="date" id="scheduleDate" aria-label="表示する日付">
+                        <button type="button" class="schedule-nav-button" onclick="moveScheduleDate(1)" aria-label="次の期間">›</button>
+                        <button type="button" class="schedule-today-button" onclick="goToToday()">今日</button>
+                    </div>
+                    <div class="schedule-options">
+                        <div class="segmented-control" role="group" aria-label="表示期間">
+                            <button type="button" data-schedule-mode="day" onclick="setScheduleMode('day')">1日</button>
+                            <button type="button" data-schedule-mode="week" onclick="setScheduleMode('week')">1週間</button>
+                        </div>
+                        <div class="segmented-control" role="group" aria-label="時間の単位">
+                            <button type="button" data-schedule-unit="10" onclick="setScheduleUnit(10)">10分</button>
+                            <button type="button" data-schedule-unit="30" onclick="setScheduleUnit(30)">30分</button>
+                            <button type="button" data-schedule-unit="60" onclick="setScheduleUnit(60)">60分</button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h2 id="scheduleRangeTitle" class="schedule-range-title"></h2>
+                    <div id="scheduleSummary" class="schedule-summary" aria-label="表示期間の集計"></div>
+                </div>
+                <div id="scheduleGridScroll" class="schedule-grid-scroll">
+                    <div id="scheduleGrid" class="schedule-grid"></div>
+                </div>
+            </div>
+        </section>
     </div>
-    <script src="./js/app.js?v=3.0.4" defer></script>
+    <script src="./js/app.js?v=3.1.0" defer></script>
 </body>
 </html>
