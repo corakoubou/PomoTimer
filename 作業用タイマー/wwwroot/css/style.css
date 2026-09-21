@@ -671,7 +671,13 @@
     flex-wrap: wrap;
 }
 
-.schedule-navigation input {
+.schedule-date-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.schedule-date-picker input {
     height: 2rem;
     padding: 0 0.55rem;
     border: 1px solid #62626f;
@@ -679,6 +685,11 @@
     color: #fff;
     background: #24242c;
     color-scheme: dark;
+}
+
+.schedule-weekday {
+    min-width: 1.8rem;
+    font-weight: 600;
 }
 
 .schedule-nav-button,
@@ -705,11 +716,6 @@
 .segmented-control button {
     background: transparent;
     font-size: 0.8rem;
-}
-
-.schedule-range-title {
-    margin: 0 0 0.45rem;
-    font-size: 1rem;
 }
 
 .schedule-summary {

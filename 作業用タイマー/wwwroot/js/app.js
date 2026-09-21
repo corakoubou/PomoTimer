@@ -870,12 +870,10 @@ function renderSchedule() {
         button.classList.toggle("active", Number(button.dataset.scheduleUnit) === scheduleUnit);
     });
     document.getElementById("scheduleDate").value = toDateInputValue(scheduleDate);
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    document.getElementById("scheduleWeekday").textContent = `(${weekdays[scheduleDate.getDay()]})`;
 
     const range = getScheduleRange();
-    const lastDay = addDays(range.end, -1);
-    document.getElementById("scheduleRangeTitle").textContent = scheduleMode === "day"
-        ? formatScheduleDate(range.start)
-        : `${formatScheduleDate(range.start)} 〜 ${formatScheduleDate(lastDay)}`;
 
     const visibleLogs = [];
     const totals = new Map();
