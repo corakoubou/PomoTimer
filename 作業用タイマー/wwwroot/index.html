@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.2.1">
+    <link rel="stylesheet" href="./css/style.css?v=3.2.2">
 </head>
 <body>
     <div class="main">
@@ -93,6 +93,10 @@
                 <div class="stats-panel" id="panel-switch" data-collapsed="false">
                     <div class="stats-panel-header" onclick="togglePanel('panel-switch')">
                         <span class="stats-panel-title">総合時間</span>
+                        <div class="stats-period-switch" role="group" aria-label="総合時間の集計期間" onclick="event.stopPropagation()">
+                            <button type="button" data-stats-period="today" onclick="setStatsPeriod('today')">今日</button>
+                            <button type="button" data-stats-period="all" onclick="setStatsPeriod('all')">総合</button>
+                        </div>
                         <span class="stats-panel-arrow">▼</span>
                     </div>
                     <div class="stats-panel-body">
@@ -199,6 +203,6 @@
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.2.1" defer></script>
+    <script src="./js/app.js?v=3.2.2" defer></script>
 </body>
 </html>

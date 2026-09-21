@@ -579,6 +579,34 @@
     flex: 1 1 auto;
 }
 
+.stats-period-switch {
+    display: inline-flex;
+    padding: 0.15rem;
+    border-radius: 7px;
+    background: #303038;
+}
+
+.stats-period-switch button {
+    padding: 0.25rem 0.6rem;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #cfcfd5;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.stats-period-switch button.active {
+    background: #2563eb;
+    color: #fff;
+    font-weight: 700;
+}
+
+.stats-period-switch button:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 1px;
+}
+
 .stats-panel-arrow {
     transition: transform 0.2s;
     opacity: 0.9;
