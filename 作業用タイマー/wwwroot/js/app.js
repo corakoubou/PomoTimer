@@ -205,7 +205,7 @@ function createDateEditor(input, dateValue) {
 }
 
 function setStatsPeriod(period) {
-    statsPeriod = period === "today" ? "today" : "all";
+    statsPeriod = ["today", "all", "average"].includes(period) ? period : "all";
     localStorage.setItem("workTimerStatsPeriod", statsPeriod);
     renderStats();
 }
@@ -233,6 +233,15 @@ function getLogDurationForStats(log, period) {
     const clippedStart = Math.max(start.getTime(), dayStart.getTime());
     const clippedEnd = Math.min(end.getTime(), dayEnd.getTime());
     return Math.max(0, Math.floor((clippedEnd - clippedStart) / 1000));
+}
+
+// 開始日付のある記録を日付ごとに数える。空行は平均の分母に含めない。
+function getRecordedDayCount() {
+    return new Set(
+        logs
+            .filter(log => log.start && log.startDate)
+            .map(log => log.startDate)
+    ).size;
 }
 
 // #endregion
@@ -1158,6 +1167,8 @@ function renderScheduleSummary(totals, visibleLogs) {
 // 統計表示更新(基本情報は常に更新)
 function renderStats() {
     updateStatsPeriodButtons();
+    const calculationPeriod = statsPeriod === "today" ? "today" : "all";
+    const averageDivisor = statsPeriod === "average" ? Math.max(1, getRecordedDayCount()) : 1;
     let statusText;
     if (state === "work") {
         const activeLog = logs.length > 0 ? logs[logs.length - 1] : null;
@@ -1181,7 +1192,7 @@ function renderStats() {
     logs.forEach(log => {
         if (!log.start) return;
 
-        const diff = getLogDurationForStats(log, statsPeriod);
+        const diff = getLogDurationForStats(log, calculationPeriod);
         const fullDiff = getLogDurationForStats(log, "all");
 
         if (log.type === "work") {
@@ -1200,6 +1211,15 @@ function renderStats() {
             allDurations[log.type] += fullDiff;
         }
     });
+
+    if (statsPeriod === "average") {
+        totalWork = Math.floor(totalWork / averageDivisor);
+        totalBreak = Math.floor(totalBreak / averageDivisor);
+        totalPaused = Math.floor(totalPaused / averageDivisor);
+        Object.keys(totalsDaily).forEach(key => {
+            totalsDaily[key] = Math.floor(totalsDaily[key] / averageDivisor);
+        });
+    }
 
     document.getElementById("totalWork").textContent = format(totalWork);
     document.getElementById("totalBreak").textContent = format(totalBreak);
@@ -1294,7 +1314,8 @@ function load() {
 
     const storedMainView = localStorage.getItem("workTimerMainView");
     mainView = ["log", "schedule", "restSettings", "bonusSettings"].includes(storedMainView) ? storedMainView : "log";
-    statsPeriod = localStorage.getItem("workTimerStatsPeriod") === "today" ? "today" : "all";
+    const storedStatsPeriod = localStorage.getItem("workTimerStatsPeriod");
+    statsPeriod = ["today", "all", "average"].includes(storedStatsPeriod) ? storedStatsPeriod : "all";
     scheduleMode = localStorage.getItem("workTimerScheduleMode") === "week" ? "week" : "day";
     const storedUnit = Number(localStorage.getItem("workTimerScheduleUnit"));
     scheduleUnit = [10, 30, 60].includes(storedUnit) ? storedUnit : 30;
