@@ -556,7 +556,15 @@
     gap: 1rem;
 }
 
-.toolbar-reset {
+.toolbar-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.toolbar-action {
     flex: 0 0 auto;
     min-width: 6rem;
     padding: 0.45rem 1.1rem;
@@ -568,6 +576,17 @@
     font-size: 0.88rem;
     font-weight: 600;
     box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 680px) {
+    .history-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .toolbar-actions {
+        justify-content: flex-end;
+    }
 }
 
 .view-switch,

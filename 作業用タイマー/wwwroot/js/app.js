@@ -8,8 +8,6 @@ let scheduleMode = "day";
 let scheduleUnit = 30;
 let scheduleDate = new Date();
 
-const DAILY_KEYS = new Set(["game", "outing", "exercise", "development", "job", "secret", "sleep", "meal"]);
-
 const LOG_TYPE_OPTIONS = [
     { value: "work:strict", label: "ガチガチ集中作業" },
     { value: "work:focused", label: "集中作業" },
@@ -157,28 +155,6 @@ function normalizeDateInputValue(value) {
 
     // 日常ボタン押下
     function startDaily(key, label) {
-        if (state === key && DAILY_KEYS.has(key) && logs.length > 0) {
-            let t = now();
-            const todayStr = today();
-            let last = logs[logs.length - 1];
-            if (!last.end) {
-                last.end = t;
-                last.endDate = todayStr;
-            }
-
-            logs.push({
-                startDate: todayStr,
-                endDate: "",
-                type: key,
-                start: t,
-                end: "",
-                important: ""
-            });
-
-            save(); renderLog(); renderStats();
-            return;
-        }
-
         changeState(key);
     }
 
@@ -190,32 +166,6 @@ function normalizeDateInputValue(value) {
 
     // 休憩ボタン押下
     function startBreak() { changeState("break"); }
-
-    // 作業記録ボタン押下
-    function logWork() {
-        if (state === "work" && logs.length > 0) {
-            let t = now();
-            const todayStr = today();
-            let last = logs[logs.length - 1];
-            if (!last.end) {
-                last.end = t;
-                last.endDate = todayStr;
-            }
-
-            logs.push({
-                startDate: todayStr,
-                endDate: "",
-                type: "work",
-                start: t,
-                end: "",
-                important: last.categoryLabel || last.important || "",
-                categoryKey: last.categoryKey || "",
-                categoryLabel: last.categoryLabel || last.important || ""
-            });
-
-            save(); renderLog(); renderStats();
-        }
-    }
 
     // リセットボタン押下
     function resetTimer() {
@@ -473,16 +423,15 @@ function normalizeDateInputValue(value) {
 
 // 状態変更処理
 function changeState(newState, categoryKey = null, categoryLabel = "") {
-
-    // 同じ状態かつ作業状態でない場合は何もしない（）
-    if (state === newState && !(newState === "work" && categoryKey)) return;
-
     let t = now();
     const todayStr = today();
+    const currentLog = logs[logs.length - 1];
+    const isSameState = state === newState
+        && (newState !== "work" || currentLog?.categoryKey === categoryKey);
 
-    if (logs.length > 0 && !logs[logs.length - 1].end) {
-        logs[logs.length - 1].end = t;
-        logs[logs.length - 1].endDate = todayStr;
+    if (currentLog && !currentLog.end) {
+        currentLog.end = t;
+        currentLog.endDate = todayStr;
     }
 
     let newLog = {
@@ -503,12 +452,15 @@ function changeState(newState, categoryKey = null, categoryLabel = "") {
     logs.push(newLog);
     state = newState;
 
-    if (newState === "work") {
-        contStart = Date.now();
-        nextWorkNotificationSeconds = 1500;
-    } else {
-        contStart = null;
-        nextWorkNotificationSeconds = 1500;
+    // 同じ状態を再度記録しても、連続作業時間は維持する
+    if (!isSameState) {
+        if (newState === "work") {
+            contStart = Date.now();
+            nextWorkNotificationSeconds = 1500;
+        } else {
+            contStart = null;
+            nextWorkNotificationSeconds = 1500;
+        }
     }
 
     save();
