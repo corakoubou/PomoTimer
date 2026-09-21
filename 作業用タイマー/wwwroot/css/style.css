@@ -1058,6 +1058,26 @@ textarea.important-note {
     font-size: 0.8rem;
 }
 
+.btn-add-row {
+    background: #2563eb;
+    border: none;
+    color: #fff;
+    padding: 0.3rem 0.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.btn-add-row:hover {
+    background: #1d4ed8;
+}
+
+.btn-add-row:focus-visible,
+.btn-delete:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+}
+
     .btn-delete:hover {
         background: #c82333;
     }
@@ -1158,7 +1178,8 @@ textarea.important-note {
 }
 
 .col-action {
-    width: 150px;
+    width: 260px;
+    min-width: 260px;
 }
 
 input.time-edit {
