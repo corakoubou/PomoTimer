@@ -157,13 +157,6 @@
     gap: 0.35rem;
 }
 
-    .controls-group button {
-        width: 100%;
-        margin: 0;
-        padding-right: 0.45rem;
-        padding-left: 0.45rem;
-    }
-
 @media (max-width: 680px) {
     .controls-group {
         grid-template-columns: repeat(2, minmax(0, 1fr));
