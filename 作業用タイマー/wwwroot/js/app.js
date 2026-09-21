@@ -8,7 +8,7 @@ let scheduleMode = "day";
 let scheduleUnit = 30;
 let scheduleDate = new Date();
 
-const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep", "meal"]);
+const DAILY_KEYS = new Set(["game", "outing", "exercise", "development", "job", "secret", "sleep", "meal"]);
 
 const LOG_TYPE_OPTIONS = [
     { value: "work:strict", label: "ガチガチ集中作業" },
@@ -19,6 +19,7 @@ const LOG_TYPE_OPTIONS = [
     { value: "game", label: "ゲーム" },
     { value: "outing", label: "お出かけ" },
     { value: "exercise", label: "運動" },
+    { value: "development", label: "開発" },
     { value: "job", label: "お仕事" },
     { value: "secret", label: "秘密" },
     { value: "sleep", label: "睡眠" },
@@ -34,6 +35,7 @@ const SCHEDULE_COLORS = {
     game: "#22c55e",
     outing: "#14b8a6",
     exercise: "#84cc16",
+    development: "#06b6d4",
     job: "#60a5fa",
     secret: "#a1a1aa",
     sleep: "#7c3aed",
@@ -47,6 +49,7 @@ const DEFAULT_REST_SETTINGS = {
     game: { label: "ゲーム", interval: 1, amount: 1, direction: -1 },
     outing: { label: "お出かけ", interval: 1, amount: 1, direction: -1 },
     exercise: { label: "運動", interval: 3, amount: 1, direction: 1 },
+    development: { label: "開発", interval: 6, amount: 1, direction: 1 },
     job: { label: "お仕事", interval: 30, amount: 1, direction: 1 },
     secret: { label: "秘密", interval: 1, amount: 1, direction: -1 },
     sleep: { label: "睡眠", interval: 15, amount: 1, direction: -1 },
@@ -355,6 +358,7 @@ function normalizeDateInputValue(value) {
             "ゲーム": { type: "game" },
             "お出かけ": { type: "outing" },
             "運動": { type: "exercise" },
+            "開発": { type: "development" },
             "お仕事": { type: "job" },
             "秘密": { type: "secret" },
             "睡眠": { type: "sleep" },
@@ -518,6 +522,7 @@ function typeToLabel(t, log) {
     if (t === "game") return "ゲーム";
     if (t === "outing") return "お出かけ";
     if (t === "exercise") return "運動";
+    if (t === "development") return "開発";
     if (t === "job") return "お仕事";
     if (t === "secret") return "秘密";
     if (t === "sleep") return "睡眠";
@@ -995,7 +1000,7 @@ function renderStats() {
     const workTotals = { strict: 0, focused: 0, relaxed: 0 };
 
     let totalsDaily = {
-        game: 0, outing: 0, exercise: 0, job: 0, secret: 0, sleep: 0, meal: 0
+        game: 0, outing: 0, exercise: 0, development: 0, job: 0, secret: 0, sleep: 0, meal: 0
     };
 
     logs.forEach(log => {
@@ -1029,6 +1034,7 @@ function renderStats() {
     document.getElementById("totalGame").textContent = format(totalsDaily.game);
     document.getElementById("totalOuting").textContent = format(totalsDaily.outing);
     document.getElementById("totalExercise").textContent = format(totalsDaily.exercise);
+    document.getElementById("totalDevelopment").textContent = format(totalsDaily.development);
     document.getElementById("totalJob").textContent = format(totalsDaily.job);
     document.getElementById("totalSecret").textContent = format(totalsDaily.secret);
     document.getElementById("totalSleep").textContent = format(totalsDaily.sleep);
@@ -1051,6 +1057,7 @@ function renderStats() {
         game: totalsDaily.game,
         outing: totalsDaily.outing,
         exercise: totalsDaily.exercise,
+        development: totalsDaily.development,
         job: totalsDaily.job,
         secret: totalsDaily.secret,
         sleep: totalsDaily.sleep,

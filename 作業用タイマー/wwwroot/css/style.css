@@ -118,7 +118,7 @@
             transform: translateY(1px);
         }
 
-/* 上3 / 下4 の固定レイアウト（お絵描き&日常に使用） */
+/* 日常ボタンの固定レイアウト */
 .draw-row {
     width: 100%;
     display: grid;
@@ -132,6 +132,9 @@
 
     .draw-row.row4 {
         grid-template-columns: repeat(4, 1fr);
+    }
+
+    .draw-row:last-child {
         margin-bottom: 0;
     }
 
@@ -305,6 +308,10 @@
     background: #84cc16;
 }
 
+.btn-development {
+    background: #06b6d4;
+}
+
 .btn-job {
     background: #60a5fa;
 }
@@ -320,6 +327,7 @@
     .btn-game:hover,
     .btn-outing:hover,
     .btn-exercise:hover,
+    .btn-development:hover,
     .btn-job:hover,
     .btn-secret:hover,
     .btn-meal:hover {
