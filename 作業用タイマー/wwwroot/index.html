@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.1.14">
+    <link rel="stylesheet" href="./css/style.css?v=3.1.15">
 </head>
 <body>
     <div class="main">
@@ -163,15 +163,27 @@
                 <div class="rest-settings-card">
                     <h2>休憩時間の増減設定</h2>
                     <p class="settings-help">各モードの経過時間に応じて、休憩時間の権利をどれだけ増減させるか設定します。</p>
-                    <div class="rest-settings-header" aria-hidden="true">
-                        <span>モード</span><span>経過秒</span><span>増減</span><span>休憩秒</span>
+                    <div class="rest-settings-columns">
+                        <section class="rest-settings-group" aria-labelledby="dailyRestSettingsTitle">
+                            <h3 id="dailyRestSettingsTitle">日常</h3>
+                            <div class="rest-settings-header" aria-hidden="true">
+                                <span>モード</span><span>経過秒</span><span>増減</span><span>休憩秒</span>
+                            </div>
+                            <div id="dailyRestSettings" class="rest-settings"></div>
+                        </section>
+                        <section class="rest-settings-group" aria-labelledby="workRestSettingsTitle">
+                            <h3 id="workRestSettingsTitle">作業</h3>
+                            <div class="rest-settings-header" aria-hidden="true">
+                                <span>モード</span><span>経過秒</span><span>増減</span><span>休憩秒</span>
+                            </div>
+                            <div id="workRestSettings" class="rest-settings"></div>
+                        </section>
                     </div>
-                    <div id="restSettings" class="rest-settings"></div>
                     <button type="button" class="btn-settings-reset" onclick="resetRestSettings()">初期設定に戻す</button>
                 </div>
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.1.11" defer></script>
+    <script src="./js/app.js?v=3.1.12" defer></script>
 </body>
 </html>

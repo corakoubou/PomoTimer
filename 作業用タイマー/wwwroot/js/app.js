@@ -9,6 +9,10 @@ let scheduleUnit = 30;
 let scheduleDate = new Date();
 
 const DAILY_KEYS = new Set(["game", "outing", "video", "exercise", "development", "job", "secret", "sleep", "meal"]);
+const REST_SETTING_GROUPS = {
+    dailyRestSettings: ["game", "outing", "video", "job", "secret", "sleep", "meal"],
+    workRestSettings: ["work:strict", "work:focused", "work:relaxed", "exercise", "development", "paused", "break"]
+};
 
 const LOG_TYPE_OPTIONS = [
     { value: "work:strict", label: "ガチガチ集中作業" },
@@ -380,11 +384,13 @@ function normalizeDateInputValue(value) {
     }
 
     function renderRestSettings() {
-        const container = document.getElementById("restSettings");
-        if (!container) return;
-        container.innerHTML = "";
+        const containers = Object.fromEntries(Object.keys(REST_SETTING_GROUPS).map(id => [id, document.getElementById(id)]));
+        if (Object.values(containers).some(container => !container)) return;
+        Object.values(containers).forEach(container => { container.innerHTML = ""; });
 
-        Object.entries(restSettings).forEach(([key, setting]) => {
+        Object.entries(REST_SETTING_GROUPS).forEach(([containerId, keys]) => keys.forEach(key => {
+            const setting = restSettings[key];
+            if (!setting) return;
             const row = document.createElement("div");
             row.className = "rest-setting-row";
 
@@ -420,8 +426,8 @@ function normalizeDateInputValue(value) {
             amount.onchange = () => updateRestSetting(key, "amount", amount.value);
 
             row.append(label, interval, direction, amount);
-            container.appendChild(row);
-        });
+            containers[containerId].appendChild(row);
+        }));
     }
 
 // #endregion
