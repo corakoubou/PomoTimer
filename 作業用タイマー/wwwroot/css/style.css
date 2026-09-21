@@ -863,6 +863,11 @@ th, td {
     line-height: 1.2;
 }
 
+#logTable tbody td {
+    padding: 1px 3px;
+    vertical-align: middle;
+}
+
 th {
     background: #444;
 }
@@ -873,14 +878,16 @@ tr:nth-child(even) td {
 
 textarea.important-note {
     width: 100%;
-    min-height: 2.2em;
+    height: 20px;
+    min-height: 20px;
     resize: vertical;
     background: #1e1e1e;
     color: #fff;
     border: none;
-    padding: 4px;
-    font-size: 0.85rem;
+    padding: 1px 3px;
+    font-size: 0.8rem;
     font-family: inherit;
+    line-height: 1.2;
     box-sizing: border-box;
 }
 
@@ -892,7 +899,7 @@ textarea.important-note {
     background: #dc3545;
     border: none;
     color: #fff;
-    padding: 0.3rem 0.6rem;
+    padding: 0.15rem 0.45rem;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.8rem;
@@ -916,11 +923,11 @@ textarea.important-note {
     justify-content: center;
     background: #495057;
     color: #fff;
-    width: 1.8rem;
-    height: 1.8rem;
+    width: 1.4rem;
+    height: 1.4rem;
     border-radius: 5px;
     cursor: grab;
-    font-size: 1rem;
+    font-size: 0.85rem;
     user-select: none;
 }
 
@@ -965,12 +972,15 @@ textarea.important-note {
 .log-type-select {
     width: 100%;
     min-width: 6.5rem;
-    padding: 0.3rem 1.7rem 0.3rem 0.45rem;
+    height: 22px;
+    padding: 0 1.4rem 0 0.35rem;
     color: #fff;
     background: #1e1e1e;
     border: 1px solid #666;
     border-radius: 4px;
-    font: inherit;
+    font-family: inherit;
+    font-size: 0.75rem;
+    line-height: 1;
     cursor: pointer;
 }
 
