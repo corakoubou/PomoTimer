@@ -148,17 +148,27 @@
     }
 }
 
-/* 作業用のボタン群は折り返し */
+/* 作業用のボタン群は4列×2行 */
 .controls-group {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: center;
     width: 100%;
+    gap: 0.35rem;
 }
 
     .controls-group button {
-        flex: 1 1 180px;
+        width: 100%;
+        margin: 0;
+        padding-right: 0.45rem;
+        padding-left: 0.45rem;
     }
+
+@media (max-width: 680px) {
+    .controls-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
 
 .btn-work {
     background: #2563eb;
@@ -467,6 +477,28 @@
     align-self: flex-start;
     border-radius: 9px;
     background: #202027;
+}
+
+.history-toolbar {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.toolbar-reset {
+    flex: 0 0 auto;
+    min-width: 6rem;
+    padding: 0.45rem 1.1rem;
+    border: none;
+    border-radius: 7px;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
 }
 
 .view-switch,

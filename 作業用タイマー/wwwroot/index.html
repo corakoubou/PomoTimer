@@ -5,14 +5,17 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.1.4">
+    <link rel="stylesheet" href="./css/style.css?v=3.1.5">
 </head>
 <body>
     <div class="main">
         <section class="history-section" aria-label="作業履歴">
-            <div class="view-switcher" role="tablist" aria-label="表示モード">
-                <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
-                <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
+            <div class="history-toolbar">
+                <div class="view-switcher" role="tablist" aria-label="表示モード">
+                    <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
+                    <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
+                </div>
+                <button type="button" class="btn-reset toolbar-reset" onclick="resetTimer()">リセット</button>
             </div>
             <div id="logView" class="log-view view-panel" role="tabpanel" aria-labelledby="logViewButton">
                 <div class="top-row">
@@ -52,7 +55,6 @@
                             <button class="btn-pause" onclick="pauseTimer()">一時停止</button>
                             <button class="btn-away" onclick="startBreak()">休憩</button>
                             <button class="btn-log" onclick="logWork()">作業記録</button>
-                            <button class="btn-reset" onclick="resetTimer()">リセット</button>
                             <button class="btn-log" onclick="exportCSV()">CSV出力</button>
                             <button class="btn-log" onclick="triggerCSVImport()">CSV読込</button>
                             <input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;">
