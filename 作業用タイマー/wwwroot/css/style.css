@@ -313,11 +313,16 @@
     background: #9ca3af;
 }
 
+.btn-meal {
+    background: #f43f5e;
+}
+
     .btn-game:hover,
     .btn-outing:hover,
     .btn-exercise:hover,
     .btn-job:hover,
-    .btn-secret:hover {
+    .btn-secret:hover,
+    .btn-meal:hover {
         filter: brightness(0.9);
     }
 
