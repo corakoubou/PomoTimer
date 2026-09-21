@@ -870,8 +870,7 @@ function renderSchedule() {
         button.classList.toggle("active", Number(button.dataset.scheduleUnit) === scheduleUnit);
     });
     document.getElementById("scheduleDate").value = toDateInputValue(scheduleDate);
-    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-    document.getElementById("scheduleWeekday").textContent = `(${weekdays[scheduleDate.getDay()]})`;
+    document.getElementById("scheduleDateTitle").textContent = formatScheduleDate(scheduleDate);
 
     const range = getScheduleRange();
 
