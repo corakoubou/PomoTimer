@@ -77,8 +77,18 @@ const DEFAULT_REST_SETTINGS = {
 };
 let restSettings = createDefaultRestSettings();
 
+const DEFAULT_BONUS_SETTINGS = [
+    { label: "第一次ボーナス", intervalMinutes: 100, amountMinutes: 30 },
+    { label: "第二次ボーナス", intervalMinutes: 240, amountMinutes: 30 }
+];
+let bonusSettings = createDefaultBonusSettings();
+
 function createDefaultRestSettings() {
     return Object.fromEntries(Object.entries(DEFAULT_REST_SETTINGS).map(([key, value]) => [key, { ...value }]));
+}
+
+function createDefaultBonusSettings() {
+    return DEFAULT_BONUS_SETTINGS.map(setting => ({ ...setting }));
 }
 
 const WORK_CHEER_MESSAGES = [
@@ -428,6 +438,56 @@ function normalizeDateInputValue(value) {
             row.append(label, interval, direction, amount);
             containers[containerId].appendChild(row);
         }));
+    }
+
+    function updateBonusSetting(index, field, value) {
+        if (!bonusSettings[index] || !["intervalMinutes", "amountMinutes"].includes(field)) return;
+        bonusSettings[index][field] = Math.max(1, Math.floor(Number(value) || 1));
+        save();
+        renderBonusSettings();
+        renderStats();
+    }
+
+    function resetBonusSettings() {
+        if (!confirm("ボーナス時間の設定を初期値に戻しますか？")) return;
+        bonusSettings = createDefaultBonusSettings();
+        save();
+        renderBonusSettings();
+        renderStats();
+    }
+
+    function renderBonusSettings() {
+        const container = document.getElementById("bonusSettings");
+        if (!container) return;
+        container.innerHTML = "";
+
+        bonusSettings.forEach((setting, index) => {
+            const row = document.createElement("div");
+            row.className = "bonus-setting-row";
+
+            const label = document.createElement("span");
+            label.className = "rest-setting-label";
+            label.textContent = setting.label;
+
+            const interval = document.createElement("input");
+            interval.type = "number";
+            interval.min = "1";
+            interval.step = "1";
+            interval.value = setting.intervalMinutes;
+            interval.setAttribute("aria-label", `${setting.label}の作業経過分数`);
+            interval.onchange = () => updateBonusSetting(index, "intervalMinutes", interval.value);
+
+            const amount = document.createElement("input");
+            amount.type = "number";
+            amount.min = "1";
+            amount.step = "1";
+            amount.value = setting.amountMinutes;
+            amount.setAttribute("aria-label", `${setting.label}の休憩追加分数`);
+            amount.onchange = () => updateBonusSetting(index, "amountMinutes", amount.value);
+
+            row.append(label, interval, amount);
+            container.appendChild(row);
+        });
     }
 
 // #endregion
@@ -821,11 +881,13 @@ function scheduleTypeKey(log) {
 }
 
 function switchMainView(view) {
-    mainView = ["log", "schedule", "restSettings"].includes(view) ? view : "log";
+    const views = ["log", "schedule", "restSettings", "bonusSettings"];
+    mainView = views.includes(view) ? view : "log";
     document.getElementById("logView").hidden = mainView !== "log";
     document.getElementById("scheduleView").hidden = mainView !== "schedule";
     document.getElementById("restSettingsView").hidden = mainView !== "restSettings";
-    ["log", "schedule", "restSettings"].forEach(name => {
+    document.getElementById("bonusSettingsView").hidden = mainView !== "bonusSettings";
+    views.forEach(name => {
         const button = document.getElementById(`${name}ViewButton`);
         const active = mainView === name;
         button.classList.toggle("active", active);
@@ -1068,12 +1130,10 @@ function renderStats() {
         if (setting.direction > 0) totalRest += adjustment;
         else usedRest += adjustment;
     });
-    let bonusBlocks = Math.floor(totalWork / (100 * 60));
-    totalRest += bonusBlocks * (30 * 60);
-
-    let fourHourBlocks = Math.floor(totalWork / (4 * 60 * 60));
-
-    totalRest += fourHourBlocks * (30 * 60);
+    bonusSettings.forEach(setting => {
+        const intervalSeconds = setting.intervalMinutes * 60;
+        totalRest += Math.floor(totalWork / intervalSeconds) * setting.amountMinutes * 60;
+    });
 
     let remain = totalRest - usedRest;
     document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
@@ -1090,6 +1150,7 @@ function save() {
     localStorage.setItem("workTimerLogs", JSON.stringify(logs));
     localStorage.setItem("workTimerState", state);
     localStorage.setItem("workTimerRestSettings", JSON.stringify(restSettings));
+    localStorage.setItem("workTimerBonusSettings", JSON.stringify(bonusSettings));
 
     ["cat-daily", "cat-work"].forEach(id => {
         const el = document.getElementById(id);
@@ -1125,7 +1186,7 @@ function load() {
     if (s) state = s;
 
     const storedMainView = localStorage.getItem("workTimerMainView");
-    mainView = ["log", "schedule", "restSettings"].includes(storedMainView) ? storedMainView : "log";
+    mainView = ["log", "schedule", "restSettings", "bonusSettings"].includes(storedMainView) ? storedMainView : "log";
     scheduleMode = localStorage.getItem("workTimerScheduleMode") === "week" ? "week" : "day";
     const storedUnit = Number(localStorage.getItem("workTimerScheduleUnit"));
     scheduleUnit = [10, 30, 60].includes(storedUnit) ? storedUnit : 30;
@@ -1148,6 +1209,23 @@ function load() {
             });
         } catch {
             restSettings = createDefaultRestSettings();
+        }
+    }
+
+    const storedBonusSettings = localStorage.getItem("workTimerBonusSettings");
+    if (storedBonusSettings) {
+        try {
+            const parsed = JSON.parse(storedBonusSettings);
+            if (Array.isArray(parsed)) {
+                bonusSettings.forEach((setting, index) => {
+                    const stored = parsed[index];
+                    if (!stored) return;
+                    setting.intervalMinutes = Math.max(1, Math.floor(Number(stored.intervalMinutes) || 1));
+                    setting.amountMinutes = Math.max(1, Math.floor(Number(stored.amountMinutes) || 1));
+                });
+            }
+        } catch {
+            bonusSettings = createDefaultBonusSettings();
         }
     }
 
@@ -1200,6 +1278,7 @@ if (scheduleDateInput) {
 
 load();
 renderRestSettings();
+renderBonusSettings();
 renderLog();
 renderStats();
 switchMainView(mainView);

@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.1.15">
+    <link rel="stylesheet" href="./css/style.css?v=3.2.0">
 </head>
 <body>
     <div class="main">
@@ -15,6 +15,7 @@
                     <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
                     <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
                     <button type="button" id="restSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="restSettingsView" onclick="switchMainView('restSettings')">休憩時間の増減設定</button>
+                    <button type="button" id="bonusSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="bonusSettingsView" onclick="switchMainView('bonusSettings')">ボーナス時間の設定</button>
                 </div>
                 <div class="toolbar-actions" aria-label="ログ操作">
                     <button type="button" class="btn-log toolbar-action" onclick="exportCSV()">CSV出力</button>
@@ -182,8 +183,22 @@
                     <button type="button" class="btn-settings-reset" onclick="resetRestSettings()">初期設定に戻す</button>
                 </div>
             </div>
+            <div id="bonusSettingsView" class="rest-settings-view view-panel" role="tabpanel" aria-labelledby="bonusSettingsViewButton" hidden>
+                <div class="rest-settings-card bonus-settings-card">
+                    <h2>ボーナス時間の設定</h2>
+                    <p class="settings-help">総作業時間が設定した時間に達するたびに、休憩時間の権利を増やします。時間は分単位で設定します。</p>
+                    <section class="rest-settings-group bonus-settings-group" aria-labelledby="bonusSettingsTitle">
+                        <h3 id="bonusSettingsTitle">作業時間ボーナス</h3>
+                        <div class="bonus-settings-header" aria-hidden="true">
+                            <span>ボーナス名</span><span>作業経過（分）</span><span>休憩追加（分）</span>
+                        </div>
+                        <div id="bonusSettings" class="rest-settings"></div>
+                    </section>
+                    <button type="button" class="btn-settings-reset" onclick="resetBonusSettings()">初期設定に戻す</button>
+                </div>
+            </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.1.12" defer></script>
+    <script src="./js/app.js?v=3.2.0" defer></script>
 </body>
 </html>
