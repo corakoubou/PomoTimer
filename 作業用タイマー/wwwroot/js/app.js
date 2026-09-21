@@ -23,7 +23,7 @@ const LOG_TYPE_OPTIONS = [
     { value: "job", label: "お仕事" },
     { value: "secret", label: "秘密" },
     { value: "sleep", label: "睡眠" },
-    { value: "meal", label: "食事" }
+    { value: "meal", label: "食事・風呂" }
 ];
 
 const SCHEDULE_COLORS = {
@@ -53,7 +53,7 @@ const DEFAULT_REST_SETTINGS = {
     job: { label: "お仕事", interval: 30, amount: 1, direction: 1 },
     secret: { label: "秘密", interval: 1, amount: 1, direction: -1 },
     sleep: { label: "睡眠", interval: 15, amount: 1, direction: -1 },
-    meal: { label: "食事", interval: 6, amount: 1, direction: -1 },
+    meal: { label: "食事・風呂", interval: 6, amount: 1, direction: -1 },
     break: { label: "休憩", interval: 1, amount: 1, direction: -1 },
     paused: { label: "一時停止", interval: 5, amount: 1, direction: -1 }
 };
@@ -363,6 +363,7 @@ function normalizeDateInputValue(value) {
             "秘密": { type: "secret" },
             "睡眠": { type: "sleep" },
             "食事": { type: "meal" },
+            "食事・風呂": { type: "meal" },
             "ガチガチ集中作業": { type: "work", categoryKey: "strict", categoryLabel: "ガチガチ集中作業" },
             "集中作業": { type: "work", categoryKey: "focused", categoryLabel: "集中作業" },
             "まったり作業": { type: "work", categoryKey: "relaxed", categoryLabel: "まったり作業" },
@@ -526,7 +527,7 @@ function typeToLabel(t, log) {
     if (t === "job") return "お仕事";
     if (t === "secret") return "秘密";
     if (t === "sleep") return "睡眠";
-    if (t === "meal") return "食事";
+    if (t === "meal") return "食事・風呂";
     return t;
 }
 
