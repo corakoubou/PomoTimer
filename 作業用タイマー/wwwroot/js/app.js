@@ -7,6 +7,7 @@ let mainView = "log";
 let scheduleMode = "day";
 let scheduleUnit = 30;
 let scheduleDate = new Date();
+let statsPeriod = "all";
 
 const DAILY_KEYS = new Set(["game", "outing", "video", "exercise", "development", "job", "secret", "sleep", "meal"]);
 const REST_SETTING_GROUPS = {
@@ -195,6 +196,37 @@ function createDateEditor(input, dateValue) {
     editor.appendChild(weekday);
 
     return editor;
+}
+
+function setStatsPeriod(period) {
+    statsPeriod = period === "today" ? "today" : "all";
+    localStorage.setItem("workTimerStatsPeriod", statsPeriod);
+    renderStats();
+}
+
+function updateStatsPeriodButtons() {
+    document.querySelectorAll("[data-stats-period]").forEach(button => {
+        const active = button.dataset.statsPeriod === statsPeriod;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+}
+
+function getLogDurationForStats(log, period) {
+    if (!log.start) return 0;
+
+    const start = parseDateTime(log.startDate, log.start);
+    const end = log.end ? parseDateTime(log.endDate || log.startDate, log.end) : new Date();
+    if (end <= start) return 0;
+    if (period === "all") return Math.floor((end - start) / 1000);
+
+    const dayStart = new Date();
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    const clippedStart = Math.max(start.getTime(), dayStart.getTime());
+    const clippedEnd = Math.min(end.getTime(), dayEnd.getTime());
+    return Math.max(0, Math.floor((clippedEnd - clippedStart) / 1000));
 }
 
 // #endregion
@@ -1074,6 +1106,7 @@ function renderScheduleSummary(totals, visibleLogs) {
 
 // 統計表示更新(基本情報は常に更新)
 function renderStats() {
+    updateStatsPeriodButtons();
     let statusText;
     if (state === "work") {
         const activeLog = logs.length > 0 ? logs[logs.length - 1] : null;
@@ -1085,6 +1118,10 @@ function renderStats() {
 
     let totalWork = 0, totalBreak = 0, totalPaused = 0;
     const workTotals = { strict: 0, focused: 0, relaxed: 0 };
+    const allDurations = Object.fromEntries(
+        ["work:strict", "work:focused", "work:relaxed", "game", "outing", "video", "exercise", "development", "job", "secret", "sleep", "meal", "break", "paused"]
+            .map(key => [key, 0])
+    );
 
     let totalsDaily = {
         game: 0, outing: 0, video: 0, exercise: 0, development: 0, job: 0, secret: 0, sleep: 0, meal: 0
@@ -1093,24 +1130,23 @@ function renderStats() {
     logs.forEach(log => {
         if (!log.start) return;
 
-        let diff;
-        if (log.end) diff = diffSeconds(log.start, log.end, log.startDate, log.endDate);
-        else {
-            const st = parseDateTime(log.startDate, log.start);
-            diff = Math.floor((Date.now() - st.getTime()) / 1000);
-            if (diff < 0) diff = 0;
-        }
+        const diff = getLogDurationForStats(log, statsPeriod);
+        const fullDiff = getLogDurationForStats(log, "all");
 
         if (log.type === "work") {
             totalWork += diff;
             const categoryKey = Object.hasOwn(workTotals, log.categoryKey) ? log.categoryKey : "relaxed";
             workTotals[categoryKey] += diff;
+            allDurations[`work:${categoryKey}`] += fullDiff;
         } else if (log.type === "break") {
             totalBreak += diff;
+            allDurations.break += fullDiff;
         } else if (log.type === "paused") {
             totalPaused += diff;
+            allDurations.paused += fullDiff;
         } else if (DAILY_KEYS.has(log.type)) {
             totalsDaily[log.type] += diff;
+            allDurations[log.type] += fullDiff;
         }
     });
 
@@ -1137,32 +1173,17 @@ function renderStats() {
     }
     document.getElementById("contWork").textContent = format(cont);
 
-    const durations = {
-        "work:strict": workTotals.strict,
-        "work:focused": workTotals.focused,
-        "work:relaxed": workTotals.relaxed,
-        game: totalsDaily.game,
-        outing: totalsDaily.outing,
-        video: totalsDaily.video,
-        exercise: totalsDaily.exercise,
-        development: totalsDaily.development,
-        job: totalsDaily.job,
-        secret: totalsDaily.secret,
-        sleep: totalsDaily.sleep,
-        meal: totalsDaily.meal,
-        break: totalBreak,
-        paused: totalPaused
-    };
     let totalRest = 0;
     let usedRest = 0;
     Object.entries(restSettings).forEach(([key, setting]) => {
-        const adjustment = Math.floor((durations[key] || 0) / setting.interval) * setting.amount;
+        const adjustment = Math.floor((allDurations[key] || 0) / setting.interval) * setting.amount;
         if (setting.direction > 0) totalRest += adjustment;
         else usedRest += adjustment;
     });
     bonusSettings.forEach(setting => {
         const intervalSeconds = setting.intervalMinutes * 60;
-        totalRest += Math.floor(totalWork / intervalSeconds) * setting.amountMinutes * 60;
+        const allWork = allDurations["work:strict"] + allDurations["work:focused"] + allDurations["work:relaxed"];
+        totalRest += Math.floor(allWork / intervalSeconds) * setting.amountMinutes * 60;
     });
 
     // 休憩の実績は「休憩」状態だけでなく、減算設定された全モードの合計。
@@ -1219,6 +1240,7 @@ function load() {
 
     const storedMainView = localStorage.getItem("workTimerMainView");
     mainView = ["log", "schedule", "restSettings", "bonusSettings"].includes(storedMainView) ? storedMainView : "log";
+    statsPeriod = localStorage.getItem("workTimerStatsPeriod") === "today" ? "today" : "all";
     scheduleMode = localStorage.getItem("workTimerScheduleMode") === "week" ? "week" : "day";
     const storedUnit = Number(localStorage.getItem("workTimerScheduleUnit"));
     scheduleUnit = [10, 30, 60].includes(storedUnit) ? storedUnit : 30;
