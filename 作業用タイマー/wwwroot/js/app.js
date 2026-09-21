@@ -568,7 +568,8 @@ function getLogDurationForStats(log, period) {
 function changeState(newState, categoryKey = null, categoryLabel = "") {
     let t = now();
     const todayStr = today();
-    const currentLog = logs[logs.length - 1];
+    const activeLogIndex = getActiveLogIndex();
+    const currentLog = activeLogIndex >= 0 ? logs[activeLogIndex] : null;
     const isSameState = state === newState
         && (newState !== "work" || currentLog?.categoryKey === categoryKey);
 
@@ -640,6 +641,35 @@ function typeToLabel(t, log) {
     return t;
 }
 
+// 開始時刻があり、終了していない行を記録中のログとして扱う。
+// 手動追加した空行が末尾にあっても、実行中のタイマーを見失わないようにする。
+function getActiveLogIndex() {
+    for (let i = logs.length - 1; i >= 0; i--) {
+        if (logs[i].start && !logs[i].end) return i;
+    }
+    return -1;
+}
+
+// 指定した行の上下に、状態だけを「一時停止」とした空行を追加する。
+function insertEmptyLog(index, position) {
+    if (index < 0 || index >= logs.length || !["above", "below"].includes(position)) return;
+
+    const emptyLog = {
+        startDate: "",
+        endDate: "",
+        type: "paused",
+        start: "",
+        end: "",
+        important: "",
+        isEmptyRow: true
+    };
+    const insertIndex = position === "above" ? index : index + 1;
+    logs.splice(insertIndex, 0, emptyLog);
+    save();
+    renderLog();
+    renderStats();
+}
+
 // 表のドロップダウンから指定した行の状態を更新
 function updateLogType(index, selectedValue) {
     const log = logs[index];
@@ -663,7 +693,7 @@ function updateLogType(index, selectedValue) {
     }
 
     // 記録中の最新行を変更した場合は、現在の状態にも反映する
-    if (index === logs.length - 1 && !log.end) {
+    if (index === getActiveLogIndex()) {
         state = newType;
         contStart = newType === "work" ? Date.now() : null;
         nextWorkNotificationSeconds = 1500;
@@ -676,12 +706,12 @@ function updateLogType(index, selectedValue) {
 
 // 指定したログをドラッグ先の位置に移動（記録中の最新ログは移動不可）
 function moveLog(sourceIndex, targetIndex) {
-    const latestIndex = logs.length - 1;
-    const hasActiveLatestLog = latestIndex >= 0 && !logs[latestIndex].end;
-    const lastMovableIndex = hasActiveLatestLog ? latestIndex - 1 : latestIndex;
+    const lastIndex = logs.length - 1;
+    const activeLogIndex = getActiveLogIndex();
 
-    if (sourceIndex < 0 || sourceIndex > lastMovableIndex
-        || targetIndex < 0 || targetIndex > lastMovableIndex
+    if (sourceIndex < 0 || sourceIndex > lastIndex
+        || targetIndex < 0 || targetIndex > lastIndex
+        || sourceIndex === activeLogIndex
         || sourceIndex === targetIndex) return;
 
     const [movedLog] = logs.splice(sourceIndex, 1);
@@ -820,9 +850,7 @@ function renderLog() {
         tdImp.appendChild(textareaImp);
 
         // 行移動用のドラッグハンドル（記録中の最新ログは移動不可）
-        const latestIndex = logs.length - 1;
-        const hasActiveLatestLog = latestIndex >= 0 && !logs[latestIndex].end;
-        const isActiveLatestLog = hasActiveLatestLog && i === latestIndex;
+        const isActiveLog = i === getActiveLogIndex();
 
         let actionButtons = document.createElement("div");
         actionButtons.className = "log-action-buttons";
@@ -830,11 +858,11 @@ function renderLog() {
         let dragHandle = document.createElement("span");
         dragHandle.textContent = "☰";
         dragHandle.className = "drag-handle";
-        dragHandle.title = isActiveLatestLog ? "記録中の行は移動できません" : "ドラッグして行を移動";
+        dragHandle.title = isActiveLog ? "記録中の行は移動できません" : "ドラッグして行を移動";
         dragHandle.setAttribute("aria-label", dragHandle.title);
-        dragHandle.draggable = !isActiveLatestLog;
+        dragHandle.draggable = !isActiveLog;
 
-        if (isActiveLatestLog) {
+        if (isActiveLog) {
             dragHandle.classList.add("disabled");
         } else {
             dragHandle.addEventListener("dragstart", (event) => {
@@ -866,6 +894,19 @@ function renderLog() {
 
         actionButtons.appendChild(dragHandle);
 
+        [
+            { position: "above", text: "上追加", label: `${i + 1}行目の上に空行を追加` },
+            { position: "below", text: "下追加", label: `${i + 1}行目の下に空行を追加` }
+        ].forEach(({ position, text, label }) => {
+            const addButton = document.createElement("button");
+            addButton.type = "button";
+            addButton.textContent = text;
+            addButton.className = "btn-add-row";
+            addButton.setAttribute("aria-label", label);
+            addButton.onclick = () => insertEmptyLog(i, position);
+            actionButtons.appendChild(addButton);
+        });
+
         // 削除ボタン
         let delBtn = document.createElement("button");
         delBtn.type = "button";
@@ -874,9 +915,9 @@ function renderLog() {
         delBtn.onclick = () => {
             if (!confirm("このログを削除しますか？\nこの操作は取り消せません。")) return;
 
-            const wasDeletingLastOpen = (i === logs.length - 1) && !logs[i].end;
+            const wasDeletingActiveLog = i === getActiveLogIndex();
             logs.splice(i, 1);
-            if (logs.length === 0 || wasDeletingLastOpen) {
+            if (logs.length === 0 || wasDeletingActiveLog) {
                 state = "paused";
                 contStart = null;
                 nextWorkNotificationSeconds = 1500;
@@ -1236,7 +1277,7 @@ function load() {
     if (l) {
         logs = JSON.parse(l).map(log => {
             if (!log.startDate && log.date) log.startDate = log.date;
-            if (!log.startDate) log.startDate = today();
+            if (!log.startDate && !log.isEmptyRow) log.startDate = today();
             if (!log.endDate && log.end) log.endDate = log.startDate;
             // v2.9より前の作業ログは「まったり作業」として引き継ぐ
             if (log.type === "work" && !["strict", "focused", "relaxed"].includes(log.categoryKey)) {
