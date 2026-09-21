@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.1.12">
+    <link rel="stylesheet" href="./css/style.css?v=3.1.13">
 </head>
 <body>
     <div class="main">
@@ -135,12 +135,10 @@
                 <div class="schedule-toolbar">
                     <div class="schedule-navigation">
                         <button type="button" class="schedule-nav-button" onclick="moveScheduleDate(-1)" aria-label="前の期間">‹</button>
-                        <div class="schedule-date-picker">
-                            <input type="date" id="scheduleDate" aria-label="表示する日付">
-                            <span id="scheduleWeekday" class="schedule-weekday" aria-live="polite"></span>
-                        </div>
+                        <input type="date" id="scheduleDate" aria-label="表示する日付">
                         <button type="button" class="schedule-nav-button" onclick="moveScheduleDate(1)" aria-label="次の期間">›</button>
                         <button type="button" class="schedule-today-button" onclick="goToToday()">今日</button>
+                        <strong id="scheduleDateTitle" class="schedule-date-title" aria-live="polite"></strong>
                     </div>
                     <div class="schedule-options">
                         <div class="segmented-control" role="group" aria-label="表示期間">
@@ -174,6 +172,6 @@
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.1.10" defer></script>
+    <script src="./js/app.js?v=3.1.11" defer></script>
 </body>
 </html>
