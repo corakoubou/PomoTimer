@@ -5,11 +5,17 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.1.2">
+    <link rel="stylesheet" href="./css/style.css?v=3.1.3">
 </head>
 <body>
     <div class="main">
-        <div class="top-row">
+        <section class="history-section" aria-label="作業履歴">
+            <div class="view-switcher" role="tablist" aria-label="表示モード">
+                <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
+                <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
+            </div>
+            <div id="logView" class="log-view view-panel" role="tabpanel" aria-labelledby="logViewButton">
+                <div class="top-row">
             <div class="controls">
                 <!-- 日常（上4 / 下4） -->
                 <div class="category" id="cat-daily" data-collapsed="false">
@@ -108,14 +114,9 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <section class="history-section" aria-label="作業履歴">
-            <div class="view-switcher" role="tablist" aria-label="表示モード">
-                <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
-                <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
-            </div>
-            <div id="logView" class="table-container view-panel" role="tabpanel" aria-labelledby="logViewButton">
-            <table id="logTable">
+                </div>
+                <div class="table-container">
+                <table id="logTable">
                 <thead>
                     <tr>
                         <th class="col-index">連番</th>
@@ -130,7 +131,8 @@
                     </tr>
                 </thead>
                 <tbody></tbody>
-            </table>
+                </table>
+                </div>
             </div>
             <div id="scheduleView" class="schedule-view view-panel" role="tabpanel" aria-labelledby="scheduleViewButton" hidden>
                 <div class="schedule-toolbar">
@@ -162,6 +164,6 @@
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.1.2" defer></script>
+    <script src="./js/app.js?v=3.1.3" defer></script>
 </body>
 </html>

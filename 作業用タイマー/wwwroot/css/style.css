@@ -450,6 +450,14 @@
     gap: 0.55rem;
 }
 
+.log-view {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
 .view-switcher {
     display: flex;
     flex: 0 0 auto;
