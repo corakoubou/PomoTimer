@@ -8,7 +8,7 @@ let scheduleMode = "day";
 let scheduleUnit = 30;
 let scheduleDate = new Date();
 
-const DAILY_KEYS = new Set(["game", "outing", "exercise", "development", "job", "secret", "sleep", "meal"]);
+const DAILY_KEYS = new Set(["game", "outing", "video", "exercise", "development", "job", "secret", "sleep", "meal"]);
 
 const LOG_TYPE_OPTIONS = [
     { value: "work:strict", label: "ガチガチ集中作業" },
@@ -18,6 +18,7 @@ const LOG_TYPE_OPTIONS = [
     { value: "break", label: "休憩" },
     { value: "game", label: "ゲーム" },
     { value: "outing", label: "お出かけ" },
+    { value: "video", label: "動画視聴" },
     { value: "exercise", label: "運動" },
     { value: "development", label: "開発" },
     { value: "job", label: "お仕事" },
@@ -34,6 +35,7 @@ const SCHEDULE_COLORS = {
     break: "#f59e0b",
     game: "#22c55e",
     outing: "#14b8a6",
+    video: "#a21caf",
     exercise: "#84cc16",
     development: "#06b6d4",
     job: "#60a5fa",
@@ -59,6 +61,7 @@ const DEFAULT_REST_SETTINGS = {
     "work:relaxed": { label: "まったり作業", interval: 6, amount: 1, direction: 1 },
     game: { label: "ゲーム", interval: 1, amount: 1, direction: -1 },
     outing: { label: "お出かけ", interval: 1, amount: 1, direction: -1 },
+    video: { label: "動画視聴", interval: 1, amount: 1, direction: -1 },
     exercise: { label: "運動", interval: 3, amount: 1, direction: 1 },
     development: { label: "開発", interval: 6, amount: 1, direction: 1 },
     job: { label: "お仕事", interval: 30, amount: 1, direction: 1 },
@@ -320,6 +323,7 @@ function normalizeDateInputValue(value) {
             "一時停止": { type: "paused" },
             "ゲーム": { type: "game" },
             "お出かけ": { type: "outing" },
+            "動画視聴": { type: "video" },
             "運動": { type: "exercise" },
             "開発": { type: "development" },
             "お仕事": { type: "job" },
@@ -487,6 +491,7 @@ function typeToLabel(t, log) {
     if (t === "paused") return "一時停止";
     if (t === "game") return "ゲーム";
     if (t === "outing") return "お出かけ";
+    if (t === "video") return "動画視聴";
     if (t === "exercise") return "運動";
     if (t === "development") return "開発";
     if (t === "job") return "お仕事";
@@ -986,7 +991,7 @@ function renderStats() {
     const workTotals = { strict: 0, focused: 0, relaxed: 0 };
 
     let totalsDaily = {
-        game: 0, outing: 0, exercise: 0, development: 0, job: 0, secret: 0, sleep: 0, meal: 0
+        game: 0, outing: 0, video: 0, exercise: 0, development: 0, job: 0, secret: 0, sleep: 0, meal: 0
     };
 
     logs.forEach(log => {
@@ -1019,6 +1024,7 @@ function renderStats() {
 
     document.getElementById("totalGame").textContent = format(totalsDaily.game);
     document.getElementById("totalOuting").textContent = format(totalsDaily.outing);
+    document.getElementById("totalVideo").textContent = format(totalsDaily.video);
     document.getElementById("totalExercise").textContent = format(totalsDaily.exercise);
     document.getElementById("totalDevelopment").textContent = format(totalsDaily.development);
     document.getElementById("totalJob").textContent = format(totalsDaily.job);
@@ -1042,6 +1048,7 @@ function renderStats() {
         "work:relaxed": workTotals.relaxed,
         game: totalsDaily.game,
         outing: totalsDaily.outing,
+        video: totalsDaily.video,
         exercise: totalsDaily.exercise,
         development: totalsDaily.development,
         job: totalsDaily.job,
