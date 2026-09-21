@@ -380,6 +380,10 @@
     background: #14b8a6;
 }
 
+.btn-video {
+    background: #a21caf;
+}
+
 .btn-exercise {
     background: #84cc16;
 }
@@ -402,6 +406,7 @@
 
     .btn-game:hover,
     .btn-outing:hover,
+    .btn-video:hover,
     .btn-exercise:hover,
     .btn-development:hover,
     .btn-job:hover,
