@@ -8,7 +8,7 @@ let scheduleMode = "day";
 let scheduleUnit = 30;
 let scheduleDate = new Date();
 
-const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep"]);
+const DAILY_KEYS = new Set(["game", "outing", "exercise", "job", "secret", "sleep", "meal"]);
 
 const LOG_TYPE_OPTIONS = [
     { value: "work:strict", label: "ガチガチ集中作業" },
@@ -21,7 +21,8 @@ const LOG_TYPE_OPTIONS = [
     { value: "exercise", label: "運動" },
     { value: "job", label: "お仕事" },
     { value: "secret", label: "秘密" },
-    { value: "sleep", label: "睡眠" }
+    { value: "sleep", label: "睡眠" },
+    { value: "meal", label: "食事" }
 ];
 
 const SCHEDULE_COLORS = {
@@ -35,7 +36,8 @@ const SCHEDULE_COLORS = {
     exercise: "#84cc16",
     job: "#60a5fa",
     secret: "#a1a1aa",
-    sleep: "#7c3aed"
+    sleep: "#7c3aed",
+    meal: "#f43f5e"
 };
 
 const DEFAULT_REST_SETTINGS = {
@@ -48,6 +50,7 @@ const DEFAULT_REST_SETTINGS = {
     job: { label: "お仕事", interval: 30, amount: 1, direction: 1 },
     secret: { label: "秘密", interval: 1, amount: 1, direction: -1 },
     sleep: { label: "睡眠", interval: 15, amount: 1, direction: -1 },
+    meal: { label: "食事", interval: 6, amount: 1, direction: -1 },
     break: { label: "休憩", interval: 1, amount: 1, direction: -1 },
     paused: { label: "一時停止", interval: 5, amount: 1, direction: -1 }
 };
@@ -355,6 +358,7 @@ function normalizeDateInputValue(value) {
             "お仕事": { type: "job" },
             "秘密": { type: "secret" },
             "睡眠": { type: "sleep" },
+            "食事": { type: "meal" },
             "ガチガチ集中作業": { type: "work", categoryKey: "strict", categoryLabel: "ガチガチ集中作業" },
             "集中作業": { type: "work", categoryKey: "focused", categoryLabel: "集中作業" },
             "まったり作業": { type: "work", categoryKey: "relaxed", categoryLabel: "まったり作業" },
@@ -517,6 +521,7 @@ function typeToLabel(t, log) {
     if (t === "job") return "お仕事";
     if (t === "secret") return "秘密";
     if (t === "sleep") return "睡眠";
+    if (t === "meal") return "食事";
     return t;
 }
 
@@ -990,7 +995,7 @@ function renderStats() {
     const workTotals = { strict: 0, focused: 0, relaxed: 0 };
 
     let totalsDaily = {
-        game: 0, outing: 0, exercise: 0, job: 0, secret: 0, sleep: 0
+        game: 0, outing: 0, exercise: 0, job: 0, secret: 0, sleep: 0, meal: 0
     };
 
     logs.forEach(log => {
@@ -1027,6 +1032,7 @@ function renderStats() {
     document.getElementById("totalJob").textContent = format(totalsDaily.job);
     document.getElementById("totalSecret").textContent = format(totalsDaily.secret);
     document.getElementById("totalSleep").textContent = format(totalsDaily.sleep);
+    document.getElementById("totalMeal").textContent = format(totalsDaily.meal);
 
     let cont = 0;
     if (state === "work" && contStart) {
@@ -1048,6 +1054,7 @@ function renderStats() {
         job: totalsDaily.job,
         secret: totalsDaily.secret,
         sleep: totalsDaily.sleep,
+        meal: totalsDaily.meal,
         break: totalBreak,
         paused: totalPaused
     };

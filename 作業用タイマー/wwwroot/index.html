@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.1.0">
+    <link rel="stylesheet" href="./css/style.css?v=3.1.1">
 </head>
 <body>
     <div class="main">
@@ -27,6 +27,7 @@
                             <button class="btn-job" onclick="startDaily('job','お仕事')">お仕事</button>
                             <button class="btn-secret" onclick="startDaily('secret','秘密')">秘密</button>
                             <button class="btn-sleep" onclick="startDaily('sleep','睡眠')">睡眠</button>
+                            <button class="btn-meal" onclick="startDaily('meal','食事')">食事</button>
                         </div>
                     </div>
                 </div>
@@ -100,6 +101,7 @@
                             <div>総お仕事時間: <span id="totalJob">00:00:00</span></div>
                             <div>総秘密時間: <span id="totalSecret">00:00:00</span></div>
                             <div>総睡眠時間: <span id="totalSleep">00:00:00</span></div>
+                            <div>総食事時間: <span id="totalMeal">00:00:00</span></div>
                         </div>
                     </div>
                 </div>
@@ -158,6 +160,6 @@
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.1.0" defer></script>
+    <script src="./js/app.js?v=3.1.1" defer></script>
 </body>
 </html>
