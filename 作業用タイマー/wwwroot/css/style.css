@@ -545,7 +545,7 @@
     background: #c82333;
 }
 
-/* 基本作業時間と日常の集計を横並びにする */
+/* 基本作業時間と総合時間を横並びにする */
 .stats {
     display: flex;
     align-items: flex-start;
