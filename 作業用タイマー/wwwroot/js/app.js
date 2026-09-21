@@ -457,7 +457,7 @@ function getLogDurationForStats(log, period) {
     }
 
     function resetRestSettings() {
-        if (!confirm("休憩時間の増減設定を初期値に戻しますか？")) return;
+        if (!confirm("自由時間の増減設定を初期値に戻しますか？")) return;
         restSettings = createDefaultRestSettings();
         save();
         renderRestSettings();
@@ -503,7 +503,7 @@ function getLogDurationForStats(log, period) {
             amount.min = "1";
             amount.step = "1";
             amount.value = setting.amount;
-            amount.setAttribute("aria-label", `${setting.label}の休憩秒数`);
+            amount.setAttribute("aria-label", `${setting.label}の自由時間秒数`);
             amount.onchange = () => updateRestSetting(key, "amount", amount.value);
 
             row.append(label, interval, direction, amount);
@@ -553,7 +553,7 @@ function getLogDurationForStats(log, period) {
             amount.min = "1";
             amount.step = "1";
             amount.value = setting.amountMinutes;
-            amount.setAttribute("aria-label", `${setting.label}の休憩追加分数`);
+            amount.setAttribute("aria-label", `${setting.label}の自由時間追加分数`);
             amount.onchange = () => updateBonusSetting(index, "amountMinutes", amount.value);
 
             row.append(label, interval, amount);
@@ -1202,6 +1202,7 @@ function renderStats() {
     });
 
     document.getElementById("totalWork").textContent = format(totalWork);
+    document.getElementById("totalBreak").textContent = format(totalBreak);
     document.getElementById("totalPaused").textContent = format(totalPaused);
 
     document.getElementById("totalGame").textContent = format(totalsDaily.game);
@@ -1239,11 +1240,11 @@ function renderStats() {
         totalRest += Math.floor(allWork / intervalSeconds) * setting.amountMinutes * 60;
     });
 
-    // 休憩の実績は「休憩」状態だけでなく、減算設定された全モードの合計。
+    // 自由時間の実績は、減算設定された全モードの合計。
     let remain = totalRest - usedRest;
-    document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
-    document.getElementById("totalBreak").textContent = format(Math.floor(usedRest));
-    document.getElementById("remainRest").textContent = format(Math.floor(remain));
+    document.getElementById("totalFreeTimeEntitlement").textContent = format(Math.floor(totalRest));
+    document.getElementById("totalFreeTimeUsed").textContent = format(Math.floor(usedRest));
+    document.getElementById("remainingFreeTime").textContent = format(Math.floor(remain));
 
     if (mainView === "schedule") renderSchedule();
 
