@@ -376,16 +376,17 @@
     background: #c82333;
 }
 
-/* stats（縦に積む） */
+/* 基本作業時間と日常の集計を横並びにする */
 .stats {
     display: flex;
-    flex-direction: column;
+    align-items: flex-start;
     width: 100%;
     gap: 0.8rem;
 }
 
 .stats-panel {
-    width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
     background: #3a3a44;
     border-radius: 10px;
     box-shadow: 0 3px 6px rgba(0,0,0,0.3);
