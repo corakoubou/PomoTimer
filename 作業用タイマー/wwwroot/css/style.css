@@ -871,6 +871,16 @@ tr:nth-child(even) td {
     background: #2f2f38;
 }
 
+/* 行全体ではなく、開始日付と終了日付のセルだけを日付別に色分け */
+#logTable tbody td.log-date-cell {
+    background: var(--date-color);
+}
+
+#logTable td.log-date-cell input.date-edit {
+    background: rgba(20, 20, 25, 0.55);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
 textarea.important-note {
     width: 100%;
     min-height: 2.2em;

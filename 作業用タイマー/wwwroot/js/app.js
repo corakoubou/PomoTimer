@@ -42,6 +42,17 @@ const SCHEDULE_COLORS = {
     meal: "#f43f5e"
 };
 
+const LOG_DATE_COLORS = [
+    "#264653",
+    "#3d405b",
+    "#5a3d5c",
+    "#355070",
+    "#386641",
+    "#6b4f3a",
+    "#4a4e69",
+    "#3c5a5e"
+];
+
 const DEFAULT_REST_SETTINGS = {
     "work:strict": { label: "ガチガチ集中作業", interval: 3, amount: 1, direction: 1 },
     "work:focused": { label: "集中作業", interval: 5, amount: 1, direction: 1 },
@@ -587,6 +598,16 @@ function renderLog() {
     let tbody = document.querySelector("#logTable tbody");
     tbody.innerHTML = "";
 
+    // 同じ日付には同じ色を割り当て、日付の切り替わりを見分けやすくする
+    const dateColors = new Map();
+    logs.forEach(log => {
+        [log.startDate, log.endDate].forEach(date => {
+            if (date && !dateColors.has(date)) {
+                dateColors.set(date, LOG_DATE_COLORS[dateColors.size % LOG_DATE_COLORS.length]);
+            }
+        });
+    });
+
     // 表の作成
     logs.forEach((log, i) => {
 
@@ -604,6 +625,15 @@ function renderLog() {
         let tdTotal = document.createElement("td");
         let tdImp = document.createElement("td");
         let tdDel = document.createElement("td");
+
+        if (dateColors.has(log.startDate)) {
+            tdStartDate.className = "log-date-cell";
+            tdStartDate.style.setProperty("--date-color", dateColors.get(log.startDate));
+        }
+        if (dateColors.has(log.endDate)) {
+            tdEndDate.className = "log-date-cell";
+            tdEndDate.style.setProperty("--date-color", dateColors.get(log.endDate));
+        }
 
         // 行要素の内容設定
 
@@ -655,13 +685,13 @@ function renderLog() {
             const v = normalizeDateInputValue(e.target.value);
             logs[i].startDate = v;
             e.target.value = v;
-            save(); renderStats();
+            save(); renderLog(); renderStats();
         };
         inputEndDate.onchange = (e) => {
             const v = normalizeDateInputValue(e.target.value);
             logs[i].endDate = v;
             e.target.value = v;
-            save(); renderStats();
+            save(); renderLog(); renderStats();
         };
         inputStart.onchange = (e) => {
             const v = normalizeTimeInputValue(e.target.value);
