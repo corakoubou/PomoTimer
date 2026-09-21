@@ -267,12 +267,21 @@
     outline-offset: 1px;
 }
 
-.controls .btn-settings-reset {
+.btn-settings-reset {
     display: block;
     margin: 0.75rem 0.35rem 0.1rem auto;
     padding: 0.45rem 0.8rem;
+    border: none;
+    border-radius: 7px;
     background: #6c757d;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
     font-size: 0.82rem;
+}
+
+.btn-settings-reset:hover {
+    background: #5a6268;
 }
 
 @media (max-width: 520px) {
@@ -470,6 +479,9 @@
     align-self: flex-start;
     border-radius: 9px;
     background: #202027;
+    overflow-x: auto;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .history-toolbar {
@@ -521,6 +533,28 @@
 
 .view-panel[hidden] {
     display: none;
+}
+
+.rest-settings-view {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
+.rest-settings-card {
+    padding: 1rem;
+    border-radius: 10px;
+    background: #3a3a44;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+.rest-settings-card h2 {
+    margin: 0 0 0.55rem;
+    font-size: 1rem;
+}
+
+.rest-settings-view .rest-settings {
+    max-height: none;
 }
 
 .schedule-view {
