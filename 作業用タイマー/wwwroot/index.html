@@ -5,23 +5,24 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.1.1">
+    <link rel="stylesheet" href="./css/style.css?v=3.1.2">
 </head>
 <body>
     <div class="main">
         <div class="top-row">
             <div class="controls">
-                <!-- 日常（上3 / 下4） -->
+                <!-- 日常（上4 / 下4） -->
                 <div class="category" id="cat-daily" data-collapsed="false">
                     <div class="category-header" onclick="toggleCategory('cat-daily')">
                         <span class="category-title">日常</span>
                         <span class="category-arrow">▼</span>
                     </div>
                     <div class="category-body">
-                        <div class="draw-row row3">
+                        <div class="draw-row row4">
                             <button class="btn-game" onclick="startDaily('game','ゲーム')">ゲーム</button>
                             <button class="btn-outing" onclick="startDaily('outing','お出かけ')">お出かけ</button>
                             <button class="btn-exercise" onclick="startDaily('exercise','運動')">運動</button>
+                            <button class="btn-development" onclick="startDaily('development','開発')">開発</button>
                         </div>
                         <div class="draw-row row4">
                             <button class="btn-job" onclick="startDaily('job','お仕事')">お仕事</button>
@@ -98,6 +99,7 @@
                             <div>総ゲーム時間: <span id="totalGame">00:00:00</span></div>
                             <div>総お出かけ時間: <span id="totalOuting">00:00:00</span></div>
                             <div>総運動時間: <span id="totalExercise">00:00:00</span></div>
+                            <div>総開発時間: <span id="totalDevelopment">00:00:00</span></div>
                             <div>総お仕事時間: <span id="totalJob">00:00:00</span></div>
                             <div>総秘密時間: <span id="totalSecret">00:00:00</span></div>
                             <div>総睡眠時間: <span id="totalSleep">00:00:00</span></div>
@@ -160,6 +162,6 @@
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.1.1" defer></script>
+    <script src="./js/app.js?v=3.1.2" defer></script>
 </body>
 </html>
