@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.2.2">
+    <link rel="stylesheet" href="./css/style.css?v=3.3.0">
 </head>
 <body>
     <div class="main">
@@ -40,10 +40,11 @@
                             <button class="btn-video" onclick="startDaily('video','動画視聴')">動画視聴</button>
                             <button class="btn-job" onclick="startDaily('job','お仕事')">お仕事</button>
                         </div>
-                        <div class="draw-row row3">
+                        <div class="draw-row row4">
                             <button class="btn-secret" onclick="startDaily('secret','秘密')">秘密</button>
                             <button class="btn-sleep" onclick="startDaily('sleep','睡眠')">睡眠</button>
                             <button class="btn-meal" onclick="startDaily('meal','食事・風呂')">食事・風呂</button>
+                            <button class="btn-reflection" onclick="startDaily('reflection','懺悔・反省')">懺悔・反省</button>
                         </div>
                     </div>
                 </div>
@@ -70,6 +71,7 @@
                             <button class="btn-work btn-work-relaxed" onclick="startCategoryWork('relaxed','まったり作業')">まったり作業</button>
                             <button class="btn-exercise" onclick="startDaily('exercise','運動')">運動</button>
                             <button class="btn-development" onclick="startDaily('development','開発')">開発</button>
+                            <button class="btn-chores" onclick="startDaily('chores','雑務')">雑務</button>
                             <button class="btn-pause" onclick="pauseTimer()">一時停止</button>
                             <button class="btn-away" onclick="startBreak()">休憩</button>
                         </div>
@@ -112,6 +114,8 @@
                             <div>秘密時間: <span id="totalSecret">00:00:00</span></div>
                             <div>睡眠時間: <span id="totalSleep">00:00:00</span></div>
                             <div>食事・風呂時間: <span id="totalMeal">00:00:00</span></div>
+                            <div>懺悔・反省時間: <span id="totalReflection">00:00:00</span></div>
+                            <div>雑務時間: <span id="totalChores">00:00:00</span></div>
                         </div>
                     </div>
                 </div>
@@ -203,6 +207,6 @@
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.2.2" defer></script>
+    <script src="./js/app.js?v=3.3.0" defer></script>
 </body>
 </html>

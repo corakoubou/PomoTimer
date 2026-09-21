@@ -480,6 +480,10 @@
     background: #06b6d4;
 }
 
+.btn-chores {
+    background: #d97706;
+}
+
 .btn-job {
     background: #60a5fa;
 }
@@ -492,14 +496,20 @@
     background: #f43f5e;
 }
 
+.btn-reflection {
+    background: #be123c;
+}
+
     .btn-game:hover,
     .btn-outing:hover,
     .btn-video:hover,
     .btn-exercise:hover,
     .btn-development:hover,
+    .btn-chores:hover,
     .btn-job:hover,
     .btn-secret:hover,
-    .btn-meal:hover {
+    .btn-meal:hover,
+    .btn-reflection:hover {
         filter: brightness(0.9);
     }
 

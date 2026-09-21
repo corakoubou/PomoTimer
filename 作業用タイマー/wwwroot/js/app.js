@@ -9,10 +9,10 @@ let scheduleUnit = 30;
 let scheduleDate = new Date();
 let statsPeriod = "all";
 
-const DAILY_KEYS = new Set(["game", "outing", "video", "exercise", "development", "job", "secret", "sleep", "meal"]);
+const DAILY_KEYS = new Set(["game", "outing", "video", "exercise", "development", "chores", "job", "secret", "sleep", "meal", "reflection"]);
 const REST_SETTING_GROUPS = {
-    dailyRestSettings: ["game", "outing", "video", "job", "secret", "sleep", "meal"],
-    workRestSettings: ["work:strict", "work:focused", "work:relaxed", "exercise", "development", "paused", "break"]
+    dailyRestSettings: ["game", "outing", "video", "job", "secret", "sleep", "meal", "reflection"],
+    workRestSettings: ["work:strict", "work:focused", "work:relaxed", "exercise", "development", "chores", "paused", "break"]
 };
 
 const LOG_TYPE_OPTIONS = [
@@ -26,10 +26,12 @@ const LOG_TYPE_OPTIONS = [
     { value: "video", label: "動画視聴" },
     { value: "exercise", label: "運動" },
     { value: "development", label: "開発" },
+    { value: "chores", label: "雑務" },
     { value: "job", label: "お仕事" },
     { value: "secret", label: "秘密" },
     { value: "sleep", label: "睡眠" },
-    { value: "meal", label: "食事・風呂" }
+    { value: "meal", label: "食事・風呂" },
+    { value: "reflection", label: "懺悔・反省" }
 ];
 
 const SCHEDULE_COLORS = {
@@ -43,10 +45,12 @@ const SCHEDULE_COLORS = {
     video: "#a21caf",
     exercise: "#84cc16",
     development: "#06b6d4",
+    chores: "#d97706",
     job: "#60a5fa",
     secret: "#a1a1aa",
     sleep: "#7c3aed",
-    meal: "#f43f5e"
+    meal: "#f43f5e",
+    reflection: "#be123c"
 };
 
 const LOG_DATE_COLORS = [
@@ -69,10 +73,12 @@ const DEFAULT_REST_SETTINGS = {
     video: { label: "動画視聴", interval: 1, amount: 1, direction: -1 },
     exercise: { label: "運動", interval: 3, amount: 1, direction: 1 },
     development: { label: "開発", interval: 6, amount: 1, direction: 1 },
+    chores: { label: "雑務", interval: 3, amount: 1, direction: -1 },
     job: { label: "お仕事", interval: 30, amount: 1, direction: 1 },
     secret: { label: "秘密", interval: 1, amount: 1, direction: -1 },
     sleep: { label: "睡眠", interval: 15, amount: 1, direction: -1 },
     meal: { label: "食事・風呂", interval: 6, amount: 1, direction: -1 },
+    reflection: { label: "懺悔・反省", interval: 1, amount: 1, direction: -1 },
     break: { label: "休憩", interval: 1, amount: 1, direction: -1 },
     paused: { label: "一時停止", interval: 5, amount: 1, direction: -1 }
 };
@@ -403,11 +409,13 @@ function getLogDurationForStats(log, period) {
             "動画視聴": { type: "video" },
             "運動": { type: "exercise" },
             "開発": { type: "development" },
+            "雑務": { type: "chores" },
             "お仕事": { type: "job" },
             "秘密": { type: "secret" },
             "睡眠": { type: "sleep" },
             "食事": { type: "meal" },
             "食事・風呂": { type: "meal" },
+            "懺悔・反省": { type: "reflection" },
             "ガチガチ集中作業": { type: "work", categoryKey: "strict", categoryLabel: "ガチガチ集中作業" },
             "集中作業": { type: "work", categoryKey: "focused", categoryLabel: "集中作業" },
             "まったり作業": { type: "work", categoryKey: "relaxed", categoryLabel: "まったり作業" },
@@ -623,10 +631,12 @@ function typeToLabel(t, log) {
     if (t === "video") return "動画視聴";
     if (t === "exercise") return "運動";
     if (t === "development") return "開発";
+    if (t === "chores") return "雑務";
     if (t === "job") return "お仕事";
     if (t === "secret") return "秘密";
     if (t === "sleep") return "睡眠";
     if (t === "meal") return "食事・風呂";
+    if (t === "reflection") return "懺悔・反省";
     return t;
 }
 
@@ -1119,12 +1129,12 @@ function renderStats() {
     let totalWork = 0, totalBreak = 0, totalPaused = 0;
     const workTotals = { strict: 0, focused: 0, relaxed: 0 };
     const allDurations = Object.fromEntries(
-        ["work:strict", "work:focused", "work:relaxed", "game", "outing", "video", "exercise", "development", "job", "secret", "sleep", "meal", "break", "paused"]
+        ["work:strict", "work:focused", "work:relaxed", "game", "outing", "video", "exercise", "development", "chores", "job", "secret", "sleep", "meal", "reflection", "break", "paused"]
             .map(key => [key, 0])
     );
 
     let totalsDaily = {
-        game: 0, outing: 0, video: 0, exercise: 0, development: 0, job: 0, secret: 0, sleep: 0, meal: 0
+        game: 0, outing: 0, video: 0, exercise: 0, development: 0, chores: 0, job: 0, secret: 0, sleep: 0, meal: 0, reflection: 0
     };
 
     logs.forEach(log => {
@@ -1162,6 +1172,8 @@ function renderStats() {
     document.getElementById("totalSecret").textContent = format(totalsDaily.secret);
     document.getElementById("totalSleep").textContent = format(totalsDaily.sleep);
     document.getElementById("totalMeal").textContent = format(totalsDaily.meal);
+    document.getElementById("totalReflection").textContent = format(totalsDaily.reflection);
+    document.getElementById("totalChores").textContent = format(totalsDaily.chores);
 
     let cont = 0;
     if (state === "work" && contStart) {
