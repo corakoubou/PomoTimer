@@ -8,6 +8,8 @@ let scheduleMode = "day";
 let scheduleUnit = 30;
 let scheduleDate = new Date();
 
+const DAILY_KEYS = new Set(["game", "outing", "exercise", "development", "job", "secret", "sleep", "meal"]);
+
 const LOG_TYPE_OPTIONS = [
     { value: "work:strict", label: "ガチガチ集中作業" },
     { value: "work:focused", label: "集中作業" },
