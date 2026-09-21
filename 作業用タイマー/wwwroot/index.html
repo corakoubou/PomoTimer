@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.3.1">
+    <link rel="stylesheet" href="./css/style.css?v=3.3.2">
 </head>
 <body>
     <div class="main">
@@ -14,7 +14,7 @@
                 <div class="view-switcher" role="tablist" aria-label="表示モード">
                     <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
                     <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
-                    <button type="button" id="restSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="restSettingsView" onclick="switchMainView('restSettings')">休憩時間の増減設定</button>
+                    <button type="button" id="restSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="restSettingsView" onclick="switchMainView('restSettings')">自由時間の増減設定</button>
                     <button type="button" id="bonusSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="bonusSettingsView" onclick="switchMainView('bonusSettings')">ボーナス時間の設定</button>
                 </div>
                 <div class="toolbar-actions" aria-label="ログ操作">
@@ -87,9 +87,9 @@
                     <div class="stats-panel-body">
                         <div>状態: <span id="status">一時停止</span></div>
                         <div>連続作業時間: <span id="contWork">00:00:00</span></div>
-                        <div>休憩時間（権利）: <span id="totalRest">00:00:00</span></div>
-                        <div>休憩時間（実績）: <span id="totalBreak">00:00:00</span></div>
-                        <div>残休憩時間: <span id="remainRest">00:00:00</span></div>
+                        <div>自由時間（権利）: <span id="totalFreeTimeEntitlement">00:00:00</span></div>
+                        <div>自由時間（実績）: <span id="totalFreeTimeUsed">00:00:00</span></div>
+                        <div>残自由時間: <span id="remainingFreeTime">00:00:00</span></div>
                     </div>
                 </div>
                 <div class="stats-panel" id="panel-switch" data-collapsed="false">
@@ -104,6 +104,7 @@
                     <div class="stats-panel-body">
                         <div id="stats-daily">
                             <div>作業時間: <span id="totalWork">00:00:00</span></div>
+                            <div>休憩時間: <span id="totalBreak">00:00:00</span></div>
                             <div>一時停止時間: <span id="totalPaused">00:00:00</span></div>
                             <div>ゲーム時間: <span id="totalGame">00:00:00</span></div>
                             <div>お出かけ時間: <span id="totalOuting">00:00:00</span></div>
@@ -170,20 +171,20 @@
             </div>
             <div id="restSettingsView" class="rest-settings-view view-panel" role="tabpanel" aria-labelledby="restSettingsViewButton" hidden>
                 <div class="rest-settings-card">
-                    <h2>休憩時間の増減設定</h2>
-                    <p class="settings-help">各モードの経過時間に応じて、休憩時間の権利をどれだけ増減させるか設定します。</p>
+                    <h2>自由時間の増減設定</h2>
+                    <p class="settings-help">各モードの経過時間に応じて、自由時間の権利をどれだけ増減させるか設定します。</p>
                     <div class="rest-settings-columns">
                         <section class="rest-settings-group" aria-labelledby="dailyRestSettingsTitle">
                             <h3 id="dailyRestSettingsTitle">日常</h3>
                             <div class="rest-settings-header" aria-hidden="true">
-                                <span>モード</span><span>経過秒</span><span>増減</span><span>休憩秒</span>
+                                <span>モード</span><span>経過秒</span><span>増減</span><span>自由秒</span>
                             </div>
                             <div id="dailyRestSettings" class="rest-settings"></div>
                         </section>
                         <section class="rest-settings-group" aria-labelledby="workRestSettingsTitle">
                             <h3 id="workRestSettingsTitle">作業</h3>
                             <div class="rest-settings-header" aria-hidden="true">
-                                <span>モード</span><span>経過秒</span><span>増減</span><span>休憩秒</span>
+                                <span>モード</span><span>経過秒</span><span>増減</span><span>自由秒</span>
                             </div>
                             <div id="workRestSettings" class="rest-settings"></div>
                         </section>
@@ -194,11 +195,11 @@
             <div id="bonusSettingsView" class="rest-settings-view view-panel" role="tabpanel" aria-labelledby="bonusSettingsViewButton" hidden>
                 <div class="rest-settings-card bonus-settings-card">
                     <h2>ボーナス時間の設定</h2>
-                    <p class="settings-help">総作業時間が設定した時間に達するたびに、休憩時間の権利を増やします。時間は分単位で設定します。</p>
+                    <p class="settings-help">総作業時間が設定した時間に達するたびに、自由時間の権利を増やします。時間は分単位で設定します。</p>
                     <section class="rest-settings-group bonus-settings-group" aria-labelledby="bonusSettingsTitle">
                         <h3 id="bonusSettingsTitle">作業時間ボーナス</h3>
                         <div class="bonus-settings-header" aria-hidden="true">
-                            <span>ボーナス名</span><span>作業経過（分）</span><span>休憩追加（分）</span>
+                            <span>ボーナス名</span><span>作業経過（分）</span><span>自由時間追加（分）</span>
                         </div>
                         <div id="bonusSettings" class="rest-settings"></div>
                     </section>
@@ -207,6 +208,6 @@
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.3.1" defer></script>
+    <script src="./js/app.js?v=3.3.2" defer></script>
 </body>
 </html>
