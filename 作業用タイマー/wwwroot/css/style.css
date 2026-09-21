@@ -265,6 +265,28 @@
     line-height: 1.5;
 }
 
+.rest-settings-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.rest-settings-group {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #555561;
+    border-radius: 8px;
+    background: #34343d;
+}
+
+.rest-settings-group h3 {
+    margin: 0;
+    padding: 0.65rem;
+    border-bottom: 1px solid #555561;
+    background: #44444f;
+    font-size: 0.9rem;
+}
+
 .rest-settings-header,
 .rest-setting-row {
     display: grid;
@@ -350,6 +372,10 @@
 }
 
 @media (max-width: 680px) {
+    .rest-settings-columns {
+        grid-template-columns: 1fr;
+    }
+
     .rest-settings-header,
     .rest-setting-row {
         grid-template-columns: minmax(6.5rem, 1.4fr) repeat(3, minmax(4rem, 1fr));
