@@ -825,10 +825,11 @@ function scheduleTypeKey(log) {
 }
 
 function switchMainView(view) {
-    mainView = view === "schedule" ? "schedule" : "log";
+    mainView = ["log", "schedule", "restSettings"].includes(view) ? view : "log";
     document.getElementById("logView").hidden = mainView !== "log";
     document.getElementById("scheduleView").hidden = mainView !== "schedule";
-    ["log", "schedule"].forEach(name => {
+    document.getElementById("restSettingsView").hidden = mainView !== "restSettings";
+    ["log", "schedule", "restSettings"].forEach(name => {
         const button = document.getElementById(`${name}ViewButton`);
         const active = mainView === name;
         button.classList.toggle("active", active);
@@ -1095,7 +1096,7 @@ function save() {
     localStorage.setItem("workTimerState", state);
     localStorage.setItem("workTimerRestSettings", JSON.stringify(restSettings));
 
-    ["cat-daily", "cat-work", "cat-rest-settings"].forEach(id => {
+    ["cat-daily", "cat-work"].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         localStorage.setItem("workTimerCollapse_" + id, el.dataset.collapsed === "true" ? "1" : "0");
@@ -1128,7 +1129,8 @@ function load() {
     let s = localStorage.getItem("workTimerState");
     if (s) state = s;
 
-    mainView = localStorage.getItem("workTimerMainView") === "schedule" ? "schedule" : "log";
+    const storedMainView = localStorage.getItem("workTimerMainView");
+    mainView = ["log", "schedule", "restSettings"].includes(storedMainView) ? storedMainView : "log";
     scheduleMode = localStorage.getItem("workTimerScheduleMode") === "week" ? "week" : "day";
     const storedUnit = Number(localStorage.getItem("workTimerScheduleUnit"));
     scheduleUnit = [10, 30, 60].includes(storedUnit) ? storedUnit : 30;
@@ -1154,7 +1156,7 @@ function load() {
         }
     }
 
-    ["cat-daily", "cat-work", "cat-rest-settings"].forEach(id => {
+    ["cat-daily", "cat-work"].forEach(id => {
         const v = localStorage.getItem("workTimerCollapse_" + id);
         if (v === null) return;
         const el = document.getElementById(id);

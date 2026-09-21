@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.1.6">
+    <link rel="stylesheet" href="./css/style.css?v=3.1.7">
 </head>
 <body>
     <div class="main">
@@ -14,6 +14,7 @@
                 <div class="view-switcher" role="tablist" aria-label="表示モード">
                     <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
                     <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
+                    <button type="button" id="restSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="restSettingsView" onclick="switchMainView('restSettings')">休憩時間の増減設定</button>
                 </div>
                 <button type="button" class="btn-reset toolbar-reset" onclick="resetTimer()">リセット</button>
             </div>
@@ -64,20 +65,6 @@
                             <li><strong>集中作業</strong>：音楽のみ聞いてよし</li>
                             <li><strong>まったり作業</strong>：音楽も聞いてよし、何か配信を見てもよし</li>
                         </ul>
-                    </div>
-                </div>
-                <div class="category" id="cat-rest-settings" data-collapsed="true">
-                    <div class="category-header" onclick="toggleCategory('cat-rest-settings')">
-                        <span class="category-title">休憩時間の増減設定</span>
-                        <span class="category-arrow">▼</span>
-                    </div>
-                    <div class="category-body">
-                        <p class="settings-help">各モードの経過時間に応じて、休憩時間の権利をどれだけ増減させるか設定します。</p>
-                        <div class="rest-settings-header" aria-hidden="true">
-                            <span>モード</span><span>経過秒</span><span>増減</span><span>休憩秒</span>
-                        </div>
-                        <div id="restSettings" class="rest-settings"></div>
-                        <button type="button" class="btn-settings-reset" onclick="resetRestSettings()">初期設定に戻す</button>
                     </div>
                 </div>
             </div>
@@ -164,8 +151,19 @@
                     <div id="scheduleGrid" class="schedule-grid"></div>
                 </div>
             </div>
+            <div id="restSettingsView" class="rest-settings-view view-panel" role="tabpanel" aria-labelledby="restSettingsViewButton" hidden>
+                <div class="rest-settings-card">
+                    <h2>休憩時間の増減設定</h2>
+                    <p class="settings-help">各モードの経過時間に応じて、休憩時間の権利をどれだけ増減させるか設定します。</p>
+                    <div class="rest-settings-header" aria-hidden="true">
+                        <span>モード</span><span>経過秒</span><span>増減</span><span>休憩秒</span>
+                    </div>
+                    <div id="restSettings" class="rest-settings"></div>
+                    <button type="button" class="btn-settings-reset" onclick="resetRestSettings()">初期設定に戻す</button>
+                </div>
+            </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.1.3" defer></script>
+    <script src="./js/app.js?v=3.1.4" defer></script>
 </body>
 </html>
