@@ -1073,11 +1073,11 @@ textarea.important-note {
 }
 
 .col-start-date {
-    width: 110px;
+    width: 140px;
 }
 
 .col-end-date {
-    width: 110px;
+    width: 140px;
 }
 
 .col-type {
@@ -1140,7 +1140,8 @@ input.time-edit {
 }
 
 input.date-edit {
-    width: 100%;
+    width: 100px;
+    flex: 0 0 100px;
     max-width: 100px;
     height: 20px;
     font-size: 0.8rem;
@@ -1153,4 +1154,35 @@ input.date-edit {
     border: 1px solid #555;
     border-radius: 3px;
     box-sizing: border-box;
+}
+
+.date-editor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+}
+
+.date-weekday {
+    min-width: 1.7rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: left;
+}
+
+.date-weekday.weekday {
+    color: #facc15;
+}
+
+.date-weekday.saturday {
+    color: #60a5fa;
+}
+
+.date-weekday.sunday {
+    color: #fb7185;
+}
+
+.date-weekday.empty {
+    visibility: hidden;
 }

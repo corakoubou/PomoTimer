@@ -166,6 +166,37 @@ function normalizeDateInputValue(value) {
     return `${y}/${pad(m)}/${pad(d)}`;
 }
 
+// ログ日付の横に表示する曜日情報を取得
+function getWeekdayInfo(dateValue) {
+    const match = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(dateValue || "");
+    if (!match) return null;
+
+    const [, year, month, day] = match.map(Number);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+
+    const weekday = date.getDay();
+    return {
+        label: `${["日", "月", "火", "水", "木", "金", "土"][weekday]}`,
+        className: weekday === 0 ? "sunday" : weekday === 6 ? "saturday" : "weekday"
+    };
+}
+
+function createDateEditor(input, dateValue) {
+    const editor = document.createElement("div");
+    editor.className = "date-editor";
+    editor.appendChild(input);
+
+    const weekdayInfo = getWeekdayInfo(dateValue);
+    const weekday = document.createElement("span");
+    weekday.className = `date-weekday${weekdayInfo ? ` ${weekdayInfo.className}` : " empty"}`;
+    weekday.textContent = weekdayInfo ? `(${weekdayInfo.label})` : "";
+    weekday.setAttribute("aria-label", weekdayInfo ? `${weekdayInfo.label}曜日` : "曜日未設定");
+    editor.appendChild(weekday);
+
+    return editor;
+}
+
 // #endregion
 
 // #endregion
@@ -730,8 +761,8 @@ function renderLog() {
             e.target.value = v;
             save(); renderStats();
         };
-        tdStartDate.appendChild(inputStartDate);
-        tdEndDate.appendChild(inputEndDate);
+        tdStartDate.appendChild(createDateEditor(inputStartDate, log.startDate));
+        tdEndDate.appendChild(createDateEditor(inputEndDate, log.endDate));
         tdStart.appendChild(inputStart);
         tdEnd.appendChild(inputEnd);
 
