@@ -1115,7 +1115,6 @@ function renderStats() {
     });
 
     document.getElementById("totalWork").textContent = format(totalWork);
-    document.getElementById("totalBreak").textContent = format(totalBreak);
     document.getElementById("totalPaused").textContent = format(totalPaused);
 
     document.getElementById("totalGame").textContent = format(totalsDaily.game);
@@ -1166,8 +1165,10 @@ function renderStats() {
         totalRest += Math.floor(totalWork / intervalSeconds) * setting.amountMinutes * 60;
     });
 
+    // 休憩の実績は「休憩」状態だけでなく、減算設定された全モードの合計。
     let remain = totalRest - usedRest;
     document.getElementById("totalRest").textContent = format(Math.floor(totalRest));
+    document.getElementById("totalBreak").textContent = format(Math.floor(usedRest));
     document.getElementById("remainRest").textContent = format(Math.floor(remain));
 
     if (mainView === "schedule") renderSchedule();
