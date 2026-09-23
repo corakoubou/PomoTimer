@@ -1027,7 +1027,7 @@ function setScheduleMode(mode) {
 }
 
 function setScheduleUnit(unit) {
-    scheduleUnit = [10, 30, 60].includes(Number(unit)) ? Number(unit) : 30;
+    scheduleUnit = [1, 10, 30, 60].includes(Number(unit)) ? Number(unit) : 30;
     saveSchedulePreferences();
     renderSchedule();
 }
@@ -1048,6 +1048,23 @@ function saveSchedulePreferences() {
     localStorage.setItem("workTimerScheduleMode", scheduleMode);
     localStorage.setItem("workTimerScheduleUnit", String(scheduleUnit));
     localStorage.setItem("workTimerScheduleDate", toDateInputValue(scheduleDate));
+}
+
+function getScheduleSlotHeight() {
+    if (scheduleUnit === 1) return 4;
+    if (scheduleUnit === 10) return 14;
+    if (scheduleUnit === 30) return 18;
+    return 30;
+}
+
+function formatScheduleTime(date, isDayEnd = false) {
+    if (isDayEnd) return "24:00:00";
+    return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function formatScheduleDuration(milliseconds) {
+    const totalMinutes = Math.floor(milliseconds / 60000);
+    return `${Math.floor(totalMinutes / 60)}時間${totalMinutes % 60}分`;
 }
 
 function renderSchedule() {
@@ -1082,7 +1099,8 @@ function renderSchedule() {
     grid.innerHTML = "";
     grid.style.setProperty("--day-count", String(range.days));
     grid.style.setProperty("--slot-minutes", String(scheduleUnit));
-    grid.style.setProperty("--slot-height", `${scheduleUnit === 10 ? 14 : scheduleUnit === 30 ? 18 : 30}px`);
+    const slotHeight = getScheduleSlotHeight();
+    grid.style.setProperty("--slot-height", `${slotHeight}px`);
 
     const corner = document.createElement("div");
     corner.className = "schedule-corner";
@@ -1123,15 +1141,18 @@ function renderSchedule() {
             const durationMinutes = (eventEnd - eventStart) / 60000;
             const event = document.createElement("div");
             event.className = "schedule-event";
-            event.style.top = `${startMinutes / scheduleUnit * (scheduleUnit === 10 ? 14 : scheduleUnit === 30 ? 18 : 30)}px`;
-            event.style.height = `${Math.max(4, durationMinutes / scheduleUnit * (scheduleUnit === 10 ? 14 : scheduleUnit === 30 ? 18 : 30))}px`;
+            event.style.top = `${startMinutes / scheduleUnit * slotHeight}px`;
+            event.style.height = `${Math.max(4, durationMinutes / scheduleUnit * slotHeight)}px`;
             event.style.setProperty("--event-color", SCHEDULE_COLORS[scheduleTypeKey(item.log)] || "#94a3b8");
-            event.title = `${typeToLabel(item.log.type, item.log)} ${pad(eventStart.getHours())}:${pad(eventStart.getMinutes())}〜${pad(eventEnd.getHours())}:${pad(eventEnd.getMinutes())}`;
+            const startTime = formatScheduleTime(eventStart);
+            const endTime = formatScheduleTime(eventEnd, eventEnd.getTime() === dayEnd.getTime());
+            const duration = formatScheduleDuration(eventEnd - eventStart);
+            event.title = `${typeToLabel(item.log.type, item.log)} ${startTime} ~ ${endTime}（${duration}）`;
             const name = document.createElement("strong");
             name.textContent = typeToLabel(item.log.type, item.log);
             const time = document.createElement("span");
             time.className = "schedule-event-time";
-            time.textContent = `${pad(eventStart.getHours())}:${pad(eventStart.getMinutes())}〜${eventEnd.getTime() === dayEnd.getTime() ? "24:00" : `${pad(eventEnd.getHours())}:${pad(eventEnd.getMinutes())}`}`;
+            time.textContent = `${startTime} ~ ${endTime}（${duration}）`;
             event.append(name, time);
             column.appendChild(event);
         });
@@ -1318,7 +1339,7 @@ function load() {
     statsPeriod = ["today", "all", "average"].includes(storedStatsPeriod) ? storedStatsPeriod : "all";
     scheduleMode = localStorage.getItem("workTimerScheduleMode") === "week" ? "week" : "day";
     const storedUnit = Number(localStorage.getItem("workTimerScheduleUnit"));
-    scheduleUnit = [10, 30, 60].includes(storedUnit) ? storedUnit : 30;
+    scheduleUnit = [1, 10, 30, 60].includes(storedUnit) ? storedUnit : 30;
     const storedScheduleDate = localStorage.getItem("workTimerScheduleDate");
     if (/^\d{4}-\d{2}-\d{2}$/.test(storedScheduleDate || "")) {
         const [year, month, day] = storedScheduleDate.split("-").map(Number);
