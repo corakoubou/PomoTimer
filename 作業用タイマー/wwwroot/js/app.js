@@ -1101,6 +1101,7 @@ function renderSchedule() {
     grid.style.setProperty("--slot-minutes", String(scheduleUnit));
     const slotHeight = getScheduleSlotHeight();
     grid.style.setProperty("--slot-height", `${slotHeight}px`);
+    grid.style.setProperty("--hour-height", `${60 / scheduleUnit * slotHeight}px`);
 
     const corner = document.createElement("div");
     corner.className = "schedule-corner";

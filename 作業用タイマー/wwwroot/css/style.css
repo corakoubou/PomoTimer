@@ -879,6 +879,7 @@
 .schedule-grid {
     --slot-height: 18px;
     --slot-minutes: 30;
+    --hour-height: 36px;
     display: grid;
     grid-template-columns: 4rem repeat(var(--day-count), minmax(8rem, 1fr));
     min-width: calc(4rem + var(--day-count) * 8rem);
@@ -943,7 +944,17 @@
 
 .schedule-day-column {
     border-right: 1px solid #555561;
-    background-image: repeating-linear-gradient(to bottom, #4c4c58 0, #4c4c58 1px, transparent 1px, transparent var(--slot-height));
+}
+
+.schedule-day-column::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background-image:
+        repeating-linear-gradient(to bottom, #6a6a76 0, #6a6a76 2px, transparent 2px, transparent var(--hour-height)),
+        repeating-linear-gradient(to bottom, #4c4c58 0, #4c4c58 1px, transparent 1px, transparent var(--slot-height));
 }
 
 .schedule-day-column.today {
