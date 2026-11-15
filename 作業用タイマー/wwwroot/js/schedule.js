@@ -1,11 +1,17 @@
+import { holidayName, HOLIDAY_FIRST_YEAR, HOLIDAY_LAST_YEAR } from "./japaneseHolidays.js";
+
 // Local calendar dates deliberately use the browser's timezone, as does the timer.
 export function dateKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
+function includesHolidays(schedule) {
+    return schedule.includeHolidays ?? ['daily', 'weekends'].includes(schedule.repeat);
+}
 export function occursOn(schedule, date) {
     const key = dateKey(date);
-    return schedule.enabled && key >= schedule.date && !(schedule.excludedDates || []).includes(key) &&
-        (schedule.repeat === 'once' ? key === schedule.date : schedule.days.includes(date.getDay()));
+    if (!schedule.enabled || key < schedule.date || (schedule.excludedDates || []).includes(key)) return false;
+    if (schedule.repeat === 'once') return key === schedule.date;
+    return holidayName(date) ? includesHolidays(schedule) : schedule.days.includes(date.getDay());
 }
 export function eventsBetween(schedules, after, until) {
     const events = [];
@@ -63,8 +69,10 @@ export function initSchedules({ root, actions, execute }) {
           </div>
           <div id="scheduleCalendarView">
           <div class="schedule-toolbar"><button type="button" id="schedulePrev" aria-label="前の月">◀</button><strong id="scheduleMonth"></strong><button type="button" id="scheduleNext" aria-label="次の月">▶</button><button type="button" id="scheduleToday">今日</button></div>
+          <div class="schedule-day-legend" aria-label="日付の色分け"><span class="legend-weekday">平日</span><span class="legend-weekend">休日（土日）</span><span class="legend-holiday">祝日（休日扱い）</span></div>
+          <p id="scheduleHolidayCoverage" role="status" hidden></p>
           <div id="scheduleCalendar" class="schedule-calendar"></div>
-          <p>日付をクリックするとその日の予定、曜日をクリックすると毎週の予定を設定できます。平日＝月〜金、休日＝土日（祝日は含みません）。</p>
+          <p>日付をクリックするとその日の予定、曜日をクリックすると毎週の予定を設定できます。平日＝月〜金（祝日を除く）、休日＝土日・日本の祝日。祝日は曜日より「祝日」のチェックを優先します。</p>
           </div>
           <div id="scheduleRegisteredView" hidden>
             <div class="schedule-toolbar" role="group" aria-label="予定の種類">
@@ -94,7 +102,7 @@ export function initSchedules({ root, actions, execute }) {
             <fieldset><legend>終了時に押すボタン</legend><input aria-label="終了時刻" id="scheduleEnd" type="time" required><select aria-label="終了ボタン" id="scheduleEndType"></select></fieldset>
             <p>終了時刻が開始時刻以前の場合は翌日に実行します。</p>
             <label>繰り返し <select id="scheduleRepeat">${Object.entries(repeats).map(([v, label]) => `<option value="${v}">${label}</option>`).join('')}</select></label>
-            <fieldset id="scheduleDays"><legend>実行する曜日（外した曜日は開始・終了とも実行しません）</legend>${names.map((name, day) => `<label><input type="checkbox" value="${day}">${name}</label>`).join('')}</fieldset>
+            <fieldset id="scheduleDays"><legend>実行する曜日（外した曜日は開始・終了とも実行しません）</legend>${names.map((name, day) => `<label><input type="checkbox" value="${day}">${name}</label>`).join('')}<label><input type="checkbox" id="scheduleIncludeHolidays">祝日</label><p>祝日は月〜日のチェックではなく「祝日」で実行を指定します。</p></fieldset>
             </fieldset>
             <div id="scheduleDeleteControls" hidden>
               <label id="scheduleDeleteScopeLabel">削除する範囲
@@ -108,7 +116,7 @@ export function initSchedules({ root, actions, execute }) {
           </form>
         </dialog>`;
     const el = id => root.querySelector('#' + id);
-    const checks = [...el('scheduleDays').querySelectorAll('input')];
+    const checks = [...el('scheduleDays').querySelectorAll('input[value]')];
     for (const id of ['scheduleStartType', 'scheduleEndType']) {
         for (const [type, label] of Object.entries(actions)) el(id).add(new Option(label, type));
     }
@@ -118,6 +126,7 @@ export function initSchedules({ root, actions, execute }) {
         const repeat = el('scheduleRepeat').value;
         el('scheduleDays').hidden = repeat === 'once';
         const day = new Date(el('automationDate').value + 'T12:00:00').getDay();
+        el('scheduleIncludeHolidays').checked = ['daily', 'weekends'].includes(repeat) || (repeat === 'weekly' && Boolean(holidayName(new Date(el('automationDate').value + 'T12:00:00'))));
         setDays(repeat === 'weekdays' ? [1, 2, 3, 4, 5] : repeat === 'weekends' ? [0, 6] : repeat === 'weekly' ? [day] : [0, 1, 2, 3, 4, 5, 6]);
     }
     function fill(schedule) {
@@ -129,7 +138,10 @@ export function initSchedules({ root, actions, execute }) {
         el('scheduleEndType').value = schedule?.endType ?? 'sleep';
         el('scheduleRepeat').value = schedule?.repeat ?? (dialogWeekly ? 'weekly' : 'once');
         preset();
-        if (schedule) setDays(schedule.days);
+        if (schedule) {
+            setDays(schedule.days);
+            el('scheduleIncludeHolidays').checked = includesHolidays(schedule);
+        }
         el('scheduleError').textContent = '';
         el('scheduleDeleteControls').hidden = !schedule;
         el('scheduleDeleteScopeLabel').hidden = !schedule || schedule.repeat === 'once';
@@ -185,12 +197,16 @@ export function initSchedules({ root, actions, execute }) {
         el('scheduleListDescription').textContent = listKind === 'once'
             ? '指定した日だけ実行する予定です。'
             : '平日・休日・毎日・毎週など、繰り返し実行する予定です。';
+        const supported = month.getFullYear() >= HOLIDAY_FIRST_YEAR && month.getFullYear() <= HOLIDAY_LAST_YEAR;
+        el('scheduleHolidayCoverage').hidden = supported;
+        el('scheduleHolidayCoverage').textContent = `祝日データは${HOLIDAY_FIRST_YEAR}〜${HOLIDAY_LAST_YEAR}年に対応しています。この年の祝日は判定できません。`;
         el('scheduleMonth').textContent = `${month.getFullYear()}年${month.getMonth() + 1}月`;
         const calendar = el('scheduleCalendar');
         calendar.replaceChildren();
         names.forEach((name, day) => {
             const button = document.createElement('button');
             button.type = 'button'; button.textContent = name; button.className = 'schedule-weekday';
+            button.classList.add(day === 0 || day === 6 ? 'is-weekend' : 'is-weekday');
             button.setAttribute('aria-label', `毎週${name}曜日の予定を設定`);
             button.onclick = () => {
                 const date = new Date(month);
@@ -208,12 +224,21 @@ export function initSchedules({ root, actions, execute }) {
             const matching = schedules.filter(s => occursOn(s, date)).sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
             const button = document.createElement('button'); button.type = 'button';
             button.className = 'schedule-day';
+            const holiday = holidayName(date);
+            button.classList.add(holiday ? 'is-holiday' : date.getDay() === 0 || date.getDay() === 6 ? 'is-weekend' : 'is-weekday');
+            if (holiday) button.title = holiday;
             button.classList.toggle('is-today', key === dateKey(new Date()));
             const descriptions = matching.map(schedule => `${schedule.start}から ${actions[schedule.startType]}、${schedule.end <= schedule.start ? '翌日 ' : ''}${schedule.end}まで ${actions[schedule.endType]}`);
-            button.setAttribute('aria-label', `${key}${descriptions.length ? ' ' + descriptions.join('、') : ' 予定なし'}`);
+            button.setAttribute('aria-label', `${key}${holiday ? ' ' + holiday : ''}${descriptions.length ? ' ' + descriptions.join('、') : ' 予定なし'}`);
             const dayLabel = document.createElement('span');
             dayLabel.className = 'schedule-day-number';
             dayLabel.textContent = day;
+            if (holiday) {
+                const name = document.createElement('span');
+                name.className = 'schedule-holiday-name';
+                name.textContent = holiday;
+                dayLabel.append(name);
+            }
             button.append(dayLabel);
             matching.forEach(schedule => {
                 const detail = document.createElement('span');
@@ -238,7 +263,7 @@ export function initSchedules({ root, actions, execute }) {
             const label = document.createElement('label');
             const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = schedule.enabled;
             toggle.onchange = () => { schedule.enabled = toggle.checked; persist(); render(); };
-            label.append(toggle, document.createTextNode(`${schedule.date}〜 ${repeats[schedule.repeat]}${schedule.repeat === 'once' ? '' : `（${schedule.days.map(d => names[d]).join('・')}）`} ${schedule.start} ${actions[schedule.startType]} → ${schedule.end <= schedule.start ? '翌日 ' : ''}${schedule.end} ${actions[schedule.endType]}`));
+            label.append(toggle, document.createTextNode(`${schedule.date}〜 ${repeats[schedule.repeat]}${schedule.repeat === 'once' ? '' : `（${[...schedule.days.map(d => names[d]), ...(includesHolidays(schedule) ? ['祝日'] : [])].join('・')}）`} ${schedule.start} ${actions[schedule.startType]} → ${schedule.end <= schedule.start ? '翌日 ' : ''}${schedule.end} ${actions[schedule.endType]}`));
             if (schedule.excludedDates?.length) {
                 const exclusions = document.createElement('span');
                 exclusions.className = 'schedule-exclusions';
@@ -272,14 +297,14 @@ export function initSchedules({ root, actions, execute }) {
     el('scheduleForm').onsubmit = event => {
         event.preventDefault();
         const days = checks.filter(c => c.checked).map(c => Number(c.value));
-        if (el('scheduleRepeat').value !== 'once' && !days.length) {
-            el('scheduleError').textContent = '実行する曜日を1つ以上選択してください。'; return;
+        if (el('scheduleRepeat').value !== 'once' && !days.length && !el('scheduleIncludeHolidays').checked) {
+            el('scheduleError').textContent = '実行する曜日または祝日を1つ以上選択してください。'; return;
         }
         const schedule = {
             id: editing ?? crypto.randomUUID(), date: el('automationDate').value,
             start: el('scheduleStart').value, end: el('scheduleEnd').value,
             startType: el('scheduleStartType').value, endType: el('scheduleEndType').value,
-            repeat: el('scheduleRepeat').value, days,
+            repeat: el('scheduleRepeat').value, days, includeHolidays: el('scheduleIncludeHolidays').checked,
             enabled: editing ? schedules.find(s => s.id === editing).enabled : true,
             excludedDates: editing ? (schedules.find(s => s.id === editing).excludedDates || []) : [],
             updatedAt: Date.now()

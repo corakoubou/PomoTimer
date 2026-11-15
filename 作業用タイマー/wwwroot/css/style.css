@@ -1306,3 +1306,17 @@ input.date-edit {
 #scheduleRoot button:disabled { opacity: .5; cursor: default; }
 
 #scheduleRoot .schedule-exclusions { display: block; color: #cfd1d8; font-size: .8rem; }
+
+/* Holiday colors also override weekend colors when a public holiday falls on a weekend. */
+#scheduleRoot .is-weekday { background: #252530; }
+#scheduleRoot .is-weekend { background: #233b55; border-color: #6c9ac7; }
+#scheduleRoot .is-holiday { background: #542c40; border-color: #d18ca9; }
+#scheduleRoot .is-weekend .schedule-day-number { color: #b5d9ff; }
+#scheduleRoot .is-holiday .schedule-day-number { color: #ffc6df; }
+#scheduleRoot .is-today { border: 2px solid #a5b4fc; }
+#scheduleRoot .schedule-holiday-name { display: block; font-size: .75rem; line-height: 1.4; }
+.schedule-day-legend { display: flex; gap: 1rem; flex-wrap: wrap; padding-top: .5rem; font-size: .8rem; }
+.schedule-day-legend span::before { content: ''; display: inline-block; width: .8rem; height: .8rem; margin-right: .4rem; border: 1px solid #aaa; border-radius: 3px; }
+.legend-weekday::before { background: #252530; }
+.legend-weekend::before { background: #233b55; }
+.legend-holiday::before { background: #542c40; }

@@ -32,10 +32,38 @@ test('deleting one occurrence excludes both actions and preserves following week
     const weekly = { ...base, repeat: 'weekly', days: [1], excludedDates: ['2026-11-16'] };
     assert.equal(occursOn(weekly, dt('2026-11-16T12:00:00')), false);
     assert.equal(eventsBetween([weekly], dt('2026-11-16T00:00:00'), dt('2026-11-17T00:00:00')).length, 0);
-    assert.equal(eventsBetween([weekly], dt('2026-11-23T00:00:00'), dt('2026-11-24T00:00:00')).length, 2);
+    assert.equal(eventsBetween([weekly], dt('2026-11-30T00:00:00'), dt('2026-12-01T00:00:00')).length, 2);
 });
 test('deleting an overnight occurrence suppresses its next-day end but preserves the previous end', () => {
     const overnight = { ...base, days: [1, 2, 3, 4, 5, 6, 0], start: '22:00', end: '06:00', excludedDates: ['2026-11-17'] };
     const events = eventsBetween([overnight], dt('2026-11-17T00:00:00'), dt('2026-11-18T23:59:59'));
     assert.deepEqual(events.map(e => [e.kind, e.at.getDate()]), [['end', 17], ['start', 18]]);
+});
+
+test('weekday holiday membership is controlled by the holiday checkbox, independently of weekdays', () => {
+    const weekday = { ...base, repeat: 'weekdays', includeHolidays: false };
+    assert.equal(occursOn(weekday, dt('2026-11-23T12:00:00')), false);
+    assert.equal(occursOn(weekday, dt('2026-11-24T12:00:00')), true);
+    const onlyHolidays = { ...base, days: [], includeHolidays: true };
+    assert.equal(occursOn(onlyHolidays, dt('2026-11-23T12:00:00')), true);
+    assert.equal(occursOn(onlyHolidays, dt('2026-11-24T12:00:00')), false);
+});
+test('holiday presets apply to existing weekend/daily schedules, while weekly excludes holidays by default', () => {
+    const holiday = dt('2026-11-23T12:00:00');
+    assert.equal(occursOn({ ...base, repeat: 'weekends', days: [0, 6] }, holiday), true);
+    assert.equal(occursOn({ ...base, repeat: 'daily' }, holiday), true);
+    assert.equal(occursOn({ ...base, repeat: 'weekdays' }, holiday), false);
+    assert.equal(occursOn({ ...base, repeat: 'weekly', days: [1] }, holiday), false);
+    assert.equal(occursOn({ ...base, repeat: 'once', date: '2026-11-23' }, holiday), true);
+});
+test('holiday checkbox overrides Saturday/Sunday and excluded dates still take precedence', () => {
+    const schedule = { ...base, date: '2026-01-01', days: [0, 6], includeHolidays: false };
+    assert.equal(occursOn(schedule, dt('2026-05-03T12:00:00')), false);
+    assert.equal(occursOn({ ...schedule, includeHolidays: true }, dt('2026-05-03T12:00:00')), true);
+    assert.equal(occursOn({ ...schedule, includeHolidays: true, excludedDates: ['2026-05-03'] }, dt('2026-05-03T12:00:00')), false);
+});
+test('holiday-only schedules execute both actions exactly once', () => {
+    const holidays = { ...base, days: [], includeHolidays: true };
+    const events = eventsBetween([holidays], dt('2026-11-23T00:00:00'), dt('2026-11-25T00:00:00'));
+    assert.deepEqual(events.map(e => e.type), ['work-relaxed', 'sleep']);
 });
