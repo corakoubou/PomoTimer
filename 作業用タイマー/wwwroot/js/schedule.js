@@ -68,11 +68,11 @@ export function initSchedules({ root, actions, execute }) {
             <button type="button" id="scheduleListMode" aria-pressed="false">登録済み一覧</button>
           </div>
           <div id="scheduleCalendarView">
-          <div class="schedule-toolbar"><button type="button" id="schedulePrev" aria-label="前の月">◀</button><strong id="scheduleMonth"></strong><button type="button" id="scheduleNext" aria-label="次の月">▶</button><button type="button" id="scheduleToday">今日</button></div>
+          <div class="schedule-toolbar schedule-month-navigation"><button type="button" id="schedulePrev" aria-label="前の月">◀</button><strong id="scheduleMonth"></strong><button type="button" id="scheduleNext" aria-label="次の月">▶</button><button type="button" id="scheduleToday">今日</button></div>
           <div class="schedule-day-legend" aria-label="日付の色分け"><span class="legend-weekday">平日</span><span class="legend-weekend">休日（土日）</span><span class="legend-holiday">祝日（休日扱い）</span></div>
           <p id="scheduleHolidayCoverage" role="status" hidden></p>
           <div id="scheduleCalendar" class="schedule-calendar"></div>
-          <p>日付をクリックするとその日の予定、曜日をクリックすると毎週の予定を設定できます。平日＝月〜金（祝日を除く）、休日＝土日・日本の祝日。祝日は曜日より「祝日」のチェックを優先します。</p>
+          <p class="schedule-calendar-help">日付をクリックするとその日の予定、曜日をクリックすると毎週の予定を設定できます。平日＝月〜金（祝日を除く）、休日＝土日・日本の祝日。祝日は曜日より「祝日」のチェックを優先します。</p>
           </div>
           <div id="scheduleRegisteredView" hidden>
             <div class="schedule-toolbar" role="group" aria-label="予定の種類">
