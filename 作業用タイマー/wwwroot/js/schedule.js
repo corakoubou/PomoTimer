@@ -217,7 +217,6 @@ export function initSchedules({ root, actions, execute }) {
         });
         for (let i = 0; i < month.getDay(); i++) calendar.append(document.createElement('span'));
         const count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-        calendar.style.setProperty('--calendar-weeks', Math.ceil((month.getDay() + count) / 7));
         for (let day = 1; day <= count; day++) {
             const date = new Date(month.getFullYear(), month.getMonth(), day);
             const key = dateKey(date);
