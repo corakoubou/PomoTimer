@@ -521,8 +521,27 @@ function getRecordedDayCount() {
     }
 
     function updateBonusSetting(index, field, value) {
-        if (!bonusSettings[index] || !["intervalMinutes", "amountMinutes"].includes(field)) return;
-        bonusSettings[index][field] = Math.max(1, Math.floor(Number(value) || 1));
+        if (!bonusSettings[index] || !["label", "intervalMinutes", "amountMinutes"].includes(field)) return;
+        if (field === "label") {
+            bonusSettings[index].label = value.trim() || `ボーナス${index + 1}`;
+        } else {
+            const number = Number(value);
+            bonusSettings[index][field] = Number.isFinite(number) ? Math.max(1, Math.floor(number)) : 1;
+        }
+        save();
+        renderStats();
+    }
+
+    function addBonusSetting() {
+        bonusSettings.push({ label: `ボーナス${bonusSettings.length + 1}`, intervalMinutes: 100, amountMinutes: 30 });
+        save();
+        renderBonusSettings();
+        renderStats();
+        document.querySelector("#bonusSettings .bonus-setting-row:last-child .bonus-name-input")?.focus();
+    }
+
+    function deleteBonusSetting(index) {
+        bonusSettings.splice(index, 1);
         save();
         renderBonusSettings();
         renderStats();
@@ -541,13 +560,28 @@ function getRecordedDayCount() {
         if (!container) return;
         container.innerHTML = "";
 
+        if (!bonusSettings.length) {
+            const empty = document.createElement("p");
+            empty.className = "settings-help";
+            empty.textContent = 'ボーナスは登録されていません。「ボーナスを追加」から追加できます。';
+            container.appendChild(empty);
+        }
         bonusSettings.forEach((setting, index) => {
             const row = document.createElement("div");
             row.className = "bonus-setting-row";
 
-            const label = document.createElement("span");
-            label.className = "rest-setting-label";
-            label.textContent = setting.label;
+            const label = document.createElement("input");
+            label.type = "text";
+            label.className = "bonus-name-input";
+            label.value = setting.label;
+            label.setAttribute("aria-label", `${index + 1}件目のボーナス名`);
+            label.onchange = () => {
+                updateBonusSetting(index, "label", label.value);
+                label.value = setting.label;
+                interval.setAttribute("aria-label", `${setting.label}の作業経過分数`);
+                amount.setAttribute("aria-label", `${setting.label}の自由時間追加分数`);
+                remove.setAttribute("aria-label", `${setting.label}を削除`);
+            };
 
             const interval = document.createElement("input");
             interval.type = "number";
@@ -555,7 +589,7 @@ function getRecordedDayCount() {
             interval.step = "1";
             interval.value = setting.intervalMinutes;
             interval.setAttribute("aria-label", `${setting.label}の作業経過分数`);
-            interval.onchange = () => updateBonusSetting(index, "intervalMinutes", interval.value);
+            interval.onchange = () => { updateBonusSetting(index, "intervalMinutes", interval.value); interval.value = setting.intervalMinutes; };
 
             const amount = document.createElement("input");
             amount.type = "number";
@@ -563,9 +597,15 @@ function getRecordedDayCount() {
             amount.step = "1";
             amount.value = setting.amountMinutes;
             amount.setAttribute("aria-label", `${setting.label}の自由時間追加分数`);
-            amount.onchange = () => updateBonusSetting(index, "amountMinutes", amount.value);
+            amount.onchange = () => { updateBonusSetting(index, "amountMinutes", amount.value); amount.value = setting.amountMinutes; };
 
-            row.append(label, interval, amount);
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "btn-delete";
+            remove.textContent = "削除";
+            remove.setAttribute("aria-label", `${setting.label}を削除`);
+            remove.onclick = () => deleteBonusSetting(index);
+            row.append(label, interval, amount, remove);
             container.appendChild(row);
         });
     }
@@ -1369,12 +1409,12 @@ function load() {
         try {
             const parsed = JSON.parse(storedBonusSettings);
             if (Array.isArray(parsed)) {
-                bonusSettings.forEach((setting, index) => {
-                    const stored = parsed[index];
-                    if (!stored) return;
-                    setting.intervalMinutes = Math.max(1, Math.floor(Number(stored.intervalMinutes) || 1));
-                    setting.amountMinutes = Math.max(1, Math.floor(Number(stored.amountMinutes) || 1));
-                });
+                bonusSettings = parsed.filter(setting => setting && typeof setting === "object").map((stored, index) => ({
+                    label: typeof stored.label === "string" && stored.label.trim()
+                        ? stored.label.trim() : (DEFAULT_BONUS_SETTINGS[index]?.label || `ボーナス${index + 1}`),
+                    intervalMinutes: Number.isFinite(Number(stored.intervalMinutes)) ? Math.max(1, Math.floor(Number(stored.intervalMinutes))) : 1,
+                    amountMinutes: Number.isFinite(Number(stored.amountMinutes)) ? Math.max(1, Math.floor(Number(stored.amountMinutes))) : 1
+                }));
             }
         } catch {
             bonusSettings = createDefaultBonusSettings();

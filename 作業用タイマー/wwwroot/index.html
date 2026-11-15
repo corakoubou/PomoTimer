@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.3.11">
+    <link rel="stylesheet" href="./css/style.css?v=3.3.12">
 </head>
 <body>
     <div class="main">
@@ -205,15 +205,16 @@
                     <section class="rest-settings-group bonus-settings-group" aria-labelledby="bonusSettingsTitle">
                         <h3 id="bonusSettingsTitle">作業時間ボーナス</h3>
                         <div class="bonus-settings-header" aria-hidden="true">
-                            <span>ボーナス名</span><span>作業経過（分）</span><span>自由時間追加（分）</span>
+                            <span>ボーナス名</span><span>作業経過（分）</span><span>自由時間追加（分）</span><span>操作</span>
                         </div>
                         <div id="bonusSettings" class="rest-settings"></div>
                     </section>
+                    <button type="button" class="btn-settings-reset" onclick="addBonusSetting()">ボーナスを追加</button>
                     <button type="button" class="btn-settings-reset" onclick="resetBonusSettings()">初期設定に戻す</button>
                 </div>
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.3.11" defer></script>
+    <script src="./js/app.js?v=3.3.12" defer></script>
 </body>
 </html>
