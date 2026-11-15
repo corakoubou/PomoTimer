@@ -1,4 +1,4 @@
-﻿let state = "paused";
+let state = "paused";
 let logs = [];
 let contStart = null;
 let nextWorkNotificationSeconds = 1500;
@@ -574,9 +574,9 @@ function getRecordedDayCount() {
 
 
 // 状態変更処理
-function changeState(newState, categoryKey = null, categoryLabel = "") {
-    let t = now();
-    const todayStr = today();
+function changeState(newState, categoryKey = null, categoryLabel = "", at = new Date()) {
+    const t = `${pad(at.getHours())}:${pad(at.getMinutes())}:${pad(at.getSeconds())}`;
+    const todayStr = `${at.getFullYear()}/${pad(at.getMonth() + 1)}/${pad(at.getDate())}`;
     const activeLogIndex = getActiveLogIndex();
     const currentLog = activeLogIndex >= 0 ? logs[activeLogIndex] : null;
     const isSameState = state === newState
@@ -608,7 +608,7 @@ function changeState(newState, categoryKey = null, categoryLabel = "") {
     // 同じ状態を再度記録しても、連続作業時間は維持する
     if (!isSameState) {
         if (newState === "work") {
-            contStart = Date.now();
+            contStart = at.getTime();
             nextWorkNotificationSeconds = 1500;
         } else {
             contStart = null;
@@ -1434,3 +1434,18 @@ renderLog();
 renderStats();
 switchMainView(mainView);
 setInterval(() => { renderStats(); }, 1000);
+
+// Reuse the existing state/category format so scheduled work contributes to free time.
+import("./schedule.js").then(({ initSchedules }) => {
+    initSchedules({
+        root: document.getElementById("scheduleRoot"),
+        actions: Object.fromEntries(LOG_TYPE_OPTIONS.map(({ value, label }) => [value, label])),
+        execute: (value, at) => {
+            const [type, categoryKey] = value.split(":");
+            const label = LOG_TYPE_OPTIONS.find(option => option.value === value)?.label || "";
+            changeState(type, categoryKey || null, type === "work" ? label : "", at);
+        }
+    });
+}).catch(error => {
+    document.getElementById("scheduleRoot").textContent = `スケジュール設定を読み込めませんでした：${error.message}`;
+});
