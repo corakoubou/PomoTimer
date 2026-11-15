@@ -1258,7 +1258,7 @@ input.date-edit {
 }
 
 /* スケジュール設定 */
-#scheduleRoot { flex: 0 0 auto; }
+#scheduleRoot { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 #scheduleRoot button, #scheduleRoot select, #scheduleRoot input[type="date"], #scheduleRoot input[type="time"] {
     background: #252530; color: #f0f0f0; border: 1px solid #737386;
     border-radius: 6px; padding: .5rem; font: inherit;
@@ -1267,10 +1267,10 @@ input.date-edit {
 #scheduleRoot button:hover { background: #494960; }
 #scheduleRoot button:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
 #scheduleRoot .schedule-toolbar { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
-#schedulePanel { background: #3a3a44; border-radius: 10px; padding: 1rem; }
+#schedulePanel { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; gap: .6rem; background: #3a3a44; border-radius: 10px; padding: 1rem; }
 #schedulePanel p, #scheduleDialog p { font-size: .85rem; line-height: 1.6; }
-#scheduleRoot .schedule-calendar { display: grid; grid-template-columns: repeat(7, minmax(125px, 1fr)); gap: .3rem; margin-top: .8rem; }
-#scheduleRoot .schedule-day { min-height: 5rem; text-align: left; overflow-wrap: anywhere; }
+#scheduleRoot .schedule-calendar { display: grid; grid-template-columns: repeat(7, minmax(125px, 1fr)); gap: .3rem; margin-top: .8rem; grid-template-rows: 40px repeat(var(--calendar-weeks, 5), minmax(110px, 1fr)); flex: 1 0 590px; min-height: 0; }
+#scheduleRoot .schedule-day { display: flex; flex-direction: column; justify-content: flex-start; min-height: 0; text-align: left; overflow-wrap: anywhere; overflow: auto; }
 #scheduleRoot .is-today { border: 2px solid #a5b4fc; }
 #scheduleRoot .schedule-item { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; padding: .7rem 0; border-top: 1px solid #666; }
 #scheduleRoot .schedule-item label { flex: 1; min-width: 180px; line-height: 1.8; }
@@ -1286,6 +1286,15 @@ input.date-edit {
 }
 
 .automation-view { flex: 1 1 auto; min-height: 0; overflow: auto; }
-#scheduleRoot .schedule-day-number { display: block; text-align: center; margin-bottom: .4rem; }
-#scheduleRoot .schedule-day-detail { display: block; border-top: 1px solid #737386; padding-top: .35rem; margin-top: .35rem; font-size: .78rem; line-height: 1.6; }
+#scheduleRoot .schedule-day-number { display: block; flex: 0 0 auto; width: 100%; box-sizing: border-box; text-align: center; padding-bottom: .4rem; border-bottom: 1px solid #737386; }
+#scheduleRoot .schedule-day-detail { display: block; flex: 0 0 auto; padding-top: .35rem; margin-top: .35rem; font-size: .78rem; line-height: 1.6; }
 #scheduleRoot .schedule-day-detail span { display: block; }
+
+#scheduleCalendarView { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; overflow: auto; }
+#scheduleRegisteredView { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; }
+#scheduleRoot [hidden] { display: none; }
+#scheduleList { flex: 1 1 auto; min-height: 0; overflow: auto; }
+#scheduleRoot .schedule-toolbar { flex: 0 0 auto; }
+#scheduleRoot .schedule-toolbar button[aria-pressed="true"] { background: #2563eb; border-color: #4c83db; }
+#scheduleRoot .schedule-day-detail + .schedule-day-detail { border-top: 1px solid #737386; }
+#schedulePanel > p { flex: 0 0 auto; margin: 0; }

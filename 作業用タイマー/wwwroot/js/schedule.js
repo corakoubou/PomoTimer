@@ -48,15 +48,31 @@ export function initSchedules({ root, actions, execute }) {
     let editing = null;
     let cursor = new Date();
     let busy = false;
+    let view = 'calendar';
+    let listKind = 'once';
     const names = ['日', '月', '火', '水', '木', '金', '土'];
     const repeats = { once: 'この日のみ', weekdays: '平日', weekends: '休日', daily: '毎日', weekly: '毎週' };
     root.innerHTML = `
         <section id="schedulePanel" aria-label="スケジュール設定">
           <p>指定した時刻にボタンを自動で押します。アプリを開いている間に実行します。時刻は端末の現地時刻です。</p>
+          <div class="schedule-toolbar schedule-mode-switch" role="group" aria-label="スケジュールの表示">
+            <button type="button" id="scheduleCalendarMode" aria-pressed="true">カレンダー</button>
+            <button type="button" id="scheduleListMode" aria-pressed="false">登録済み一覧</button>
+          </div>
+          <div id="scheduleCalendarView">
           <div class="schedule-toolbar"><button type="button" id="schedulePrev" aria-label="前の月">◀</button><strong id="scheduleMonth"></strong><button type="button" id="scheduleNext" aria-label="次の月">▶</button><button type="button" id="scheduleToday">今日</button></div>
           <div id="scheduleCalendar" class="schedule-calendar"></div>
           <p>日付をクリックするとその日の予定、曜日をクリックすると毎週の予定を設定できます。平日＝月〜金、休日＝土日（祝日は含みません）。</p>
-          <div id="scheduleList"></div>
+          </div>
+          <div id="scheduleRegisteredView" hidden>
+            <div class="schedule-toolbar" role="group" aria-label="予定の種類">
+              <button type="button" id="scheduleOnceFilter" aria-pressed="true">その日だけ</button>
+              <button type="button" id="scheduleRecurringFilter" aria-pressed="false">繰り返し</button>
+              <button type="button" id="scheduleAdd">予定を追加</button>
+            </div>
+            <p id="scheduleListDescription"></p>
+            <div id="scheduleList"></div>
+          </div>
         </section>
         <p id="scheduleMessage" role="status"></p>
         <dialog id="scheduleDialog" aria-labelledby="scheduleTitle">
@@ -99,6 +115,15 @@ export function initSchedules({ root, actions, execute }) {
         el('scheduleDialog').showModal();
     }
     function render() {
+        el('scheduleCalendarView').hidden = view !== 'calendar';
+        el('scheduleRegisteredView').hidden = view !== 'list';
+        el('scheduleCalendarMode').setAttribute('aria-pressed', String(view === 'calendar'));
+        el('scheduleListMode').setAttribute('aria-pressed', String(view === 'list'));
+        el('scheduleOnceFilter').setAttribute('aria-pressed', String(listKind === 'once'));
+        el('scheduleRecurringFilter').setAttribute('aria-pressed', String(listKind === 'recurring'));
+        el('scheduleListDescription').textContent = listKind === 'once'
+            ? '指定した日だけ実行する予定です。'
+            : '平日・休日・毎日・毎週など、繰り返し実行する予定です。';
         el('scheduleMonth').textContent = `${month.getFullYear()}年${month.getMonth() + 1}月`;
         const calendar = el('scheduleCalendar');
         calendar.replaceChildren();
@@ -115,6 +140,7 @@ export function initSchedules({ root, actions, execute }) {
         });
         for (let i = 0; i < month.getDay(); i++) calendar.append(document.createElement('span'));
         const count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+        calendar.style.setProperty('--calendar-weeks', Math.ceil((month.getDay() + count) / 7));
         for (let day = 1; day <= count; day++) {
             const date = new Date(month.getFullYear(), month.getMonth(), day);
             const key = dateKey(date);
@@ -142,8 +168,11 @@ export function initSchedules({ root, actions, execute }) {
             calendar.append(button);
         }
         const list = el('scheduleList'); list.replaceChildren();
-        if (!schedules.length) list.textContent = '予定はまだありません。';
-        schedules.forEach(schedule => {
+        const registered = schedules.filter(schedule => (schedule.repeat === 'once') === (listKind === 'once'))
+            .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+        if (!registered.length) list.textContent = listKind === 'once'
+            ? 'その日だけの予定はまだありません。' : '繰り返しの予定はまだありません。';
+        registered.forEach(schedule => {
             const row = document.createElement('div'); row.className = 'schedule-item';
             const label = document.createElement('label');
             const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = schedule.enabled;
@@ -156,6 +185,11 @@ export function initSchedules({ root, actions, execute }) {
             list.append(row);
         });
     }
+    el('scheduleCalendarMode').onclick = () => { view = 'calendar'; render(); };
+    el('scheduleListMode').onclick = () => { view = 'list'; render(); };
+    el('scheduleOnceFilter').onclick = () => { listKind = 'once'; render(); };
+    el('scheduleRecurringFilter').onclick = () => { listKind = 'recurring'; render(); };
+    el('scheduleAdd').onclick = () => open(null, dateKey(new Date()), listKind === 'recurring');
     el('schedulePrev').onclick = () => { month.setMonth(month.getMonth() - 1); render(); };
     el('scheduleNext').onclick = () => { month.setMonth(month.getMonth() + 1); render(); };
     el('scheduleToday').onclick = () => { month = new Date(); month.setDate(1); render(); };
