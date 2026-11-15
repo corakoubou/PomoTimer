@@ -1004,10 +1004,11 @@ function scheduleTypeKey(log) {
 }
 
 function switchMainView(view) {
-    const views = ["log", "schedule", "restSettings", "bonusSettings"];
+    const views = ["log", "schedule", "automation", "restSettings", "bonusSettings"];
     mainView = views.includes(view) ? view : "log";
     document.getElementById("logView").hidden = mainView !== "log";
     document.getElementById("scheduleView").hidden = mainView !== "schedule";
+    document.getElementById("automationView").hidden = mainView !== "automation";
     document.getElementById("restSettingsView").hidden = mainView !== "restSettings";
     document.getElementById("bonusSettingsView").hidden = mainView !== "bonusSettings";
     views.forEach(name => {
@@ -1335,7 +1336,7 @@ function load() {
     if (s) state = s;
 
     const storedMainView = localStorage.getItem("workTimerMainView");
-    mainView = ["log", "schedule", "restSettings", "bonusSettings"].includes(storedMainView) ? storedMainView : "log";
+    mainView = ["log", "schedule", "automation", "restSettings", "bonusSettings"].includes(storedMainView) ? storedMainView : "log";
     const storedStatsPeriod = localStorage.getItem("workTimerStatsPeriod");
     statsPeriod = ["today", "all", "average"].includes(storedStatsPeriod) ? storedStatsPeriod : "all";
     scheduleMode = localStorage.getItem("workTimerScheduleMode") === "week" ? "week" : "day";

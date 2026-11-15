@@ -51,8 +51,7 @@ export function initSchedules({ root, actions, execute }) {
     const names = ['日', '月', '火', '水', '木', '金', '土'];
     const repeats = { once: 'この日のみ', weekdays: '平日', weekends: '休日', daily: '毎日', weekly: '毎週' };
     root.innerHTML = `
-        <div class="schedule-toolbar"><button type="button" id="scheduleToggle" aria-expanded="false">スケジュール設定モード</button><span id="automationSummary"></span></div>
-        <section id="schedulePanel" hidden aria-label="スケジュール設定">
+        <section id="schedulePanel" aria-label="スケジュール設定">
           <p>指定した時刻にボタンを自動で押します。アプリを開いている間に実行します。時刻は端末の現地時刻です。</p>
           <div class="schedule-toolbar"><button type="button" id="schedulePrev" aria-label="前の月">◀</button><strong id="scheduleMonth"></strong><button type="button" id="scheduleNext" aria-label="次の月">▶</button><button type="button" id="scheduleToday">今日</button></div>
           <div id="scheduleCalendar" class="schedule-calendar"></div>
@@ -100,7 +99,6 @@ export function initSchedules({ root, actions, execute }) {
         el('scheduleDialog').showModal();
     }
     function render() {
-        el('automationSummary').textContent = `有効な予定：${schedules.filter(s => s.enabled).length}件`;
         el('scheduleMonth').textContent = `${month.getFullYear()}年${month.getMonth() + 1}月`;
         const calendar = el('scheduleCalendar');
         calendar.replaceChildren();
@@ -120,12 +118,26 @@ export function initSchedules({ root, actions, execute }) {
         for (let day = 1; day <= count; day++) {
             const date = new Date(month.getFullYear(), month.getMonth(), day);
             const key = dateKey(date);
-            const matching = schedules.filter(s => occursOn(s, date));
+            const matching = schedules.filter(s => occursOn(s, date)).sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
             const button = document.createElement('button'); button.type = 'button';
             button.className = 'schedule-day';
             button.classList.toggle('is-today', key === dateKey(new Date()));
-            button.setAttribute('aria-label', `${key} 予定${matching.length}件`);
-            button.textContent = `${day}${matching.length ? `\n${matching.length}件` : ''}`;
+            const descriptions = matching.map(schedule => `${schedule.start}から ${actions[schedule.startType]}、${schedule.end <= schedule.start ? '翌日 ' : ''}${schedule.end}まで ${actions[schedule.endType]}`);
+            button.setAttribute('aria-label', `${key}${descriptions.length ? ' ' + descriptions.join('、') : ' 予定なし'}`);
+            const dayLabel = document.createElement('span');
+            dayLabel.className = 'schedule-day-number';
+            dayLabel.textContent = day;
+            button.append(dayLabel);
+            matching.forEach(schedule => {
+                const detail = document.createElement('span');
+                detail.className = 'schedule-day-detail';
+                for (const text of [`${schedule.start}から ${actions[schedule.startType]}`, `${schedule.end <= schedule.start ? '翌日 ' : ''}${schedule.end}まで ${actions[schedule.endType]}`]) {
+                    const line = document.createElement('span');
+                    line.textContent = text;
+                    detail.append(line);
+                }
+                button.append(detail);
+            });
             button.onclick = () => { selected = key; open(null); };
             calendar.append(button);
         }
@@ -144,10 +156,6 @@ export function initSchedules({ root, actions, execute }) {
             list.append(row);
         });
     }
-    el('scheduleToggle').onclick = () => {
-        el('schedulePanel').hidden = !el('schedulePanel').hidden;
-        el('scheduleToggle').setAttribute('aria-expanded', String(!el('schedulePanel').hidden));
-    };
     el('schedulePrev').onclick = () => { month.setMonth(month.getMonth() - 1); render(); };
     el('scheduleNext').onclick = () => { month.setMonth(month.getMonth() + 1); render(); };
     el('scheduleToday').onclick = () => { month = new Date(); month.setDate(1); render(); };

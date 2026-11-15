@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.3.4">
+    <link rel="stylesheet" href="./css/style.css?v=3.3.5">
 </head>
 <body>
     <div class="main">
@@ -14,6 +14,7 @@
                 <div class="view-switcher" role="tablist" aria-label="表示モード">
                     <button type="button" id="logViewButton" class="view-switch active" role="tab" aria-selected="true" aria-controls="logView" onclick="switchMainView('log')">ログ一覧</button>
                     <button type="button" id="scheduleViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="scheduleView" onclick="switchMainView('schedule')">タイムスケジュール</button>
+                    <button type="button" id="automationViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="automationView" onclick="switchMainView('automation')">スケジュール設定</button>
                     <button type="button" id="restSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="restSettingsView" onclick="switchMainView('restSettings')">自由時間の増減設定</button>
                     <button type="button" id="bonusSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="bonusSettingsView" onclick="switchMainView('bonusSettings')">ボーナス時間の設定</button>
                 </div>
@@ -25,7 +26,6 @@
                 </div>
             </div>
             <div id="logView" class="log-view view-panel" role="tabpanel" aria-labelledby="logViewButton">
-                <div id="scheduleRoot"></div>
                 <div class="top-row">
             <div class="controls">
                 <!-- 日常 -->
@@ -143,6 +143,9 @@
                 </table>
                 </div>
             </div>
+            <div id="automationView" class="automation-view view-panel" role="tabpanel" aria-labelledby="automationViewButton" hidden>
+                <div id="scheduleRoot"></div>
+            </div>
             <div id="scheduleView" class="schedule-view view-panel" role="tabpanel" aria-labelledby="scheduleViewButton" hidden>
                 <div class="schedule-toolbar">
                     <div class="schedule-navigation">
@@ -211,6 +214,6 @@
             </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.3.4" defer></script>
+    <script src="./js/app.js?v=3.3.5" defer></script>
 </body>
 </html>

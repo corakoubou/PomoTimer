@@ -1267,10 +1267,10 @@ input.date-edit {
 #scheduleRoot button:hover { background: #494960; }
 #scheduleRoot button:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
 #scheduleRoot .schedule-toolbar { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
-#schedulePanel { background: #3a3a44; border-radius: 10px; padding: 1rem; max-height: 55vh; overflow: auto; margin-top: .7rem; }
+#schedulePanel { background: #3a3a44; border-radius: 10px; padding: 1rem; }
 #schedulePanel p, #scheduleDialog p { font-size: .85rem; line-height: 1.6; }
-#scheduleRoot .schedule-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .3rem; margin-top: .8rem; }
-#scheduleRoot .schedule-day { min-height: 3.5rem; white-space: pre-line; }
+#scheduleRoot .schedule-calendar { display: grid; grid-template-columns: repeat(7, minmax(125px, 1fr)); gap: .3rem; margin-top: .8rem; }
+#scheduleRoot .schedule-day { min-height: 5rem; text-align: left; overflow-wrap: anywhere; }
 #scheduleRoot .is-today { border: 2px solid #a5b4fc; }
 #scheduleRoot .schedule-item { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; padding: .7rem 0; border-top: 1px solid #666; }
 #scheduleRoot .schedule-item label { flex: 1; min-width: 180px; line-height: 1.8; }
@@ -1284,3 +1284,8 @@ input.date-edit {
 @media (max-width: 680px) {
     #schedulePanel { padding: .6rem; }
 }
+
+.automation-view { flex: 1 1 auto; min-height: 0; overflow: auto; }
+#scheduleRoot .schedule-day-number { display: block; text-align: center; margin-bottom: .4rem; }
+#scheduleRoot .schedule-day-detail { display: block; border-top: 1px solid #737386; padding-top: .35rem; margin-top: .35rem; font-size: .78rem; line-height: 1.6; }
+#scheduleRoot .schedule-day-detail span { display: block; }
