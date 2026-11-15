@@ -216,22 +216,26 @@ export function initSchedules({ root, actions, execute }) {
             calendar.append(button);
         });
         for (let i = 0; i < month.getDay(); i++) calendar.append(document.createElement('span'));
-        const count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-        for (let day = 1; day <= count; day++) {
+        // Keep six rows and fill all trailing cells with dates from the next month.
+        const visibleDays = 42 - month.getDay();
+        for (let day = 1; day <= visibleDays; day++) {
             const date = new Date(month.getFullYear(), month.getMonth(), day);
             const key = dateKey(date);
+            const nextMonth = date.getMonth() !== month.getMonth();
             const matching = schedules.filter(s => occursOn(s, date)).sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
             const button = document.createElement('button'); button.type = 'button';
             button.className = 'schedule-day';
+            button.dataset.date = key;
+            button.classList.toggle('is-next-month', nextMonth);
             const holiday = holidayName(date);
             button.classList.add(holiday ? 'is-holiday' : date.getDay() === 0 || date.getDay() === 6 ? 'is-weekend' : 'is-weekday');
             if (holiday) button.title = holiday;
             button.classList.toggle('is-today', key === dateKey(new Date()));
             const descriptions = matching.map(schedule => `${schedule.start}から ${actions[schedule.startType]}、${schedule.end <= schedule.start ? '翌日 ' : ''}${schedule.end}まで ${actions[schedule.endType]}`);
-            button.setAttribute('aria-label', `${key}${holiday ? ' ' + holiday : ''}${descriptions.length ? ' ' + descriptions.join('、') : ' 予定なし'}`);
+            button.setAttribute('aria-label', `${key}${nextMonth ? ' 翌月' : ''}${holiday ? ' ' + holiday : ''}${descriptions.length ? ' ' + descriptions.join('、') : ' 予定なし'}`);
             const dayLabel = document.createElement('span');
             dayLabel.className = 'schedule-day-number';
-            dayLabel.textContent = day;
+            dayLabel.textContent = nextMonth ? `${date.getMonth() + 1}/${date.getDate()}` : date.getDate();
             if (holiday) {
                 const name = document.createElement('span');
                 name.className = 'schedule-holiday-name';

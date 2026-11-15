@@ -1349,3 +1349,8 @@ input.date-edit {
 #scheduleCalendarView #scheduleHolidayCoverage { grid-row: 3; }
 #scheduleCalendarView .schedule-calendar { grid-row: 4; }
 #scheduleCalendarView .schedule-calendar-help { grid-row: 5; }
+
+/* Next-month dates remain interactive, with a neutral palette even on holidays. */
+#scheduleRoot .schedule-day.is-next-month { background: #303038; border-color: #62626e; color: #b9b9c4; }
+#scheduleRoot .schedule-day.is-next-month .schedule-day-number { color: #b9b9c4; border-color: #62626e; }
+#scheduleRoot .schedule-day.is-next-month:hover { background: #41414c; }
