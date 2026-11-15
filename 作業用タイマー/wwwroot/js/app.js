@@ -1,5 +1,6 @@
-﻿import { signIn, getUser, insertSession } from "./db.js";
+import { signIn, getUser, insertSession } from "./db.js";
 import { supabase } from "./supabaseClient.js";
+import { initSchedules } from "./schedule.js";
 
 
 let state = "paused";
@@ -399,13 +400,13 @@ function togglePanel(id) {
 
 
 // 状態変更処理
-async function changeState(newState) {
+async function changeState(newState, at = new Date()) {
 
     // 同じ状態かつ作業状態でない場合は何もしない（）
     if (state === newState && !isWorkType(newState)) return;
 
-    let t = now();
-    const todayStr = today();
+    const t = `${pad(at.getHours())}:${pad(at.getMinutes())}:${pad(at.getSeconds())}`;
+    const todayStr = `${at.getFullYear()}/${pad(at.getMonth() + 1)}/${pad(at.getDate())}`;
 
     // 0件以上かつ、一番最後の情報に最終時間が入っていなければ、一番最後の行に情報を更新する形にする
     if (logs.length > 0 && !logs[logs.length - 1].end) {
@@ -430,12 +431,16 @@ async function changeState(newState) {
 
     // 作業ボタンであれば、作業開始時間（連続作業時間を記録するためのもの）を更新
     if (isWorkType(newState)) {
-        contStart = Date.now();
+        contStart = at.getTime();
         notified = false;
     } else {
         contStart = null;
         notified = false;
     }
+
+    save();
+    renderLog();
+    renderStats();
 
     if (currentUser) {
         const lastLogIndex = logs.length - 2;
@@ -445,9 +450,6 @@ async function changeState(newState) {
         await updateOrInsertMTimerRowFromLog(newLog, logs.length - 1);
     }
 
-    save();
-    renderLog();
-    renderStats();
 }
 
 // ログをM_Timerの形式に成形
@@ -812,3 +814,12 @@ window.logWork = logWork;
 window.exportCSV = exportCSV;
 window.toggleCategory = toggleCategory;
 window.togglePanel = togglePanel;
+
+initSchedules({
+    root: document.getElementById("scheduleRoot"),
+    actions: Object.fromEntries([
+        "work-strict", "work-focus", "work-relaxed", "game", "outing",
+        "exercise", "job", "secret", "sleep", "break", "paused"
+    ].map(type => [type, typeToLabel(type, {})])),
+    execute: (type, at) => changeState(type, at)
+});
