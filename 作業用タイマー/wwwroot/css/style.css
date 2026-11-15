@@ -1298,3 +1298,11 @@ input.date-edit {
 #scheduleRoot .schedule-toolbar button[aria-pressed="true"] { background: #2563eb; border-color: #4c83db; }
 #scheduleRoot .schedule-day-detail + .schedule-day-detail { border-top: 1px solid #737386; }
 #schedulePanel > p { flex: 0 0 auto; margin: 0; }
+
+#scheduleDialog .schedule-toolbar button[aria-pressed="true"] { background: #2563eb; border-color: #4c83db; }
+#scheduleExistingPicker { margin-top: .8rem; }
+#scheduleExisting { max-width: 100%; }
+#scheduleDeleteControls { margin: 1rem 0; padding: .8rem; border: 1px solid #b87171; border-radius: 6px; }
+#scheduleRoot button:disabled { opacity: .5; cursor: default; }
+
+#scheduleRoot .schedule-exclusions { display: block; color: #cfd1d8; font-size: .8rem; }

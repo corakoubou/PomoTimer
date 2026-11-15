@@ -4,7 +4,7 @@ export function dateKey(date) {
 }
 export function occursOn(schedule, date) {
     const key = dateKey(date);
-    return schedule.enabled && key >= schedule.date &&
+    return schedule.enabled && key >= schedule.date && !(schedule.excludedDates || []).includes(key) &&
         (schedule.repeat === 'once' ? key === schedule.date : schedule.days.includes(date.getDay()));
 }
 export function eventsBetween(schedules, after, until) {
@@ -46,6 +46,8 @@ export function initSchedules({ root, actions, execute }) {
     month.setDate(1);
     let selected = dateKey(new Date());
     let editing = null;
+    let dialogDate = selected;
+    let dialogWeekly = false;
     let cursor = new Date();
     let busy = false;
     let view = 'calendar';
@@ -78,14 +80,31 @@ export function initSchedules({ root, actions, execute }) {
         <dialog id="scheduleDialog" aria-labelledby="scheduleTitle">
           <form id="scheduleForm">
             <h2 id="scheduleTitle">スケジュール設定</h2>
+            <div class="schedule-toolbar" role="group" aria-label="予定の操作モード">
+              <button type="button" id="scheduleNewMode" aria-pressed="true">新規追加</button>
+              <button type="button" id="scheduleEditMode" aria-pressed="false">既存を編集</button>
+            </div>
+            <div id="scheduleExistingPicker" hidden>
+              <label>編集する予定 <select id="scheduleExisting"></select></label>
+              <p id="scheduleEditHint"></p>
+            </div>
+            <fieldset id="scheduleFields"><legend>予定の内容</legend>
             <label>開始日 <input id="automationDate" type="date" required></label>
             <fieldset><legend>開始時に押すボタン</legend><input aria-label="開始時刻" id="scheduleStart" type="time" required><select aria-label="開始ボタン" id="scheduleStartType"></select></fieldset>
             <fieldset><legend>終了時に押すボタン</legend><input aria-label="終了時刻" id="scheduleEnd" type="time" required><select aria-label="終了ボタン" id="scheduleEndType"></select></fieldset>
             <p>終了時刻が開始時刻以前の場合は翌日に実行します。</p>
             <label>繰り返し <select id="scheduleRepeat">${Object.entries(repeats).map(([v, label]) => `<option value="${v}">${label}</option>`).join('')}</select></label>
             <fieldset id="scheduleDays"><legend>実行する曜日（外した曜日は開始・終了とも実行しません）</legend>${names.map((name, day) => `<label><input type="checkbox" value="${day}">${name}</label>`).join('')}</fieldset>
+            </fieldset>
+            <div id="scheduleDeleteControls" hidden>
+              <label id="scheduleDeleteScopeLabel">削除する範囲
+                <select id="scheduleDeleteScope"><option value="day">この日だけ削除</option><option value="all">すべて削除</option></select>
+              </label>
+              <p id="scheduleDeleteDate"></p>
+              <button type="button" id="scheduleDelete">削除</button>
+            </div>
             <p id="scheduleError" role="alert"></p>
-            <div class="schedule-toolbar"><button type="submit">保存</button><button type="button" id="scheduleCancel">キャンセル</button></div>
+            <div class="schedule-toolbar"><button type="submit" id="scheduleSave">保存</button><button type="button" id="scheduleCancel">キャンセル</button></div>
           </form>
         </dialog>`;
     const el = id => root.querySelector('#' + id);
@@ -101,18 +120,60 @@ export function initSchedules({ root, actions, execute }) {
         const day = new Date(el('automationDate').value + 'T12:00:00').getDay();
         setDays(repeat === 'weekdays' ? [1, 2, 3, 4, 5] : repeat === 'weekends' ? [0, 6] : repeat === 'weekly' ? [day] : [0, 1, 2, 3, 4, 5, 6]);
     }
-    function open(schedule, date = selected, weekly = false) {
+    function fill(schedule) {
         editing = schedule?.id ?? null;
-        el('automationDate').value = schedule?.date ?? date;
+        el('automationDate').value = schedule?.date ?? dialogDate;
         el('scheduleStart').value = schedule?.start ?? '09:00';
         el('scheduleEnd').value = schedule?.end ?? '23:00';
         el('scheduleStartType').value = schedule?.startType ?? 'work:relaxed';
         el('scheduleEndType').value = schedule?.endType ?? 'sleep';
-        el('scheduleRepeat').value = schedule?.repeat ?? (weekly ? 'weekly' : 'once');
+        el('scheduleRepeat').value = schedule?.repeat ?? (dialogWeekly ? 'weekly' : 'once');
         preset();
         if (schedule) setDays(schedule.days);
         el('scheduleError').textContent = '';
+        el('scheduleDeleteControls').hidden = !schedule;
+        el('scheduleDeleteScopeLabel').hidden = !schedule || schedule.repeat === 'once';
+        el('scheduleDeleteScope').value = 'day';
+        el('scheduleDeleteDate').textContent = schedule?.repeat !== 'once' && schedule
+            ? `「この日だけ」の対象：${dialogDate}（開始日）。繰り返し予定の編集は全体に適用されます。` : '';
+    }
+    function setDialogMode(mode, id) {
+        const isEdit = mode === 'edit';
+        el('scheduleNewMode').setAttribute('aria-pressed', String(!isEdit));
+        el('scheduleEditMode').setAttribute('aria-pressed', String(isEdit));
+        el('scheduleExistingPicker').hidden = !isEdit;
+        const schedule = isEdit ? schedules.find(item => item.id === (id || el('scheduleExisting').value)) : null;
+        const empty = isEdit && !schedule;
+        el('scheduleFields').disabled = empty;
+        el('scheduleSave').disabled = empty;
+        el('scheduleEditHint').textContent = empty ? 'この日に編集できる予定はありません。' : '';
+        fill(schedule);
+    }
+    function open(schedule, date = schedule?.date ?? selected, weekly = false) {
+        dialogDate = date;
+        dialogWeekly = weekly;
+        const day = new Date(date + 'T12:00:00');
+        const dialogCandidates = schedules.filter(item => item.id === schedule?.id || occursOn({ ...item, enabled: true }, day))
+            .sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
+        const picker = el('scheduleExisting');
+        picker.replaceChildren();
+        dialogCandidates.forEach(item => picker.add(new Option(
+            `${item.start} ${actions[item.startType]}から${item.end <= item.start ? '翌日 ' : ''}${item.end} ${actions[item.endType]}${item.enabled ? '' : '（無効）'}`, item.id)));
+        if (schedule) picker.value = schedule.id;
+        setDialogMode(schedule ? 'edit' : 'new', schedule?.id);
         el('scheduleDialog').showModal();
+    }
+    function removeSchedule(schedule, date) {
+        const recurring = schedule.repeat !== 'once';
+        const all = !recurring || el('scheduleDeleteScope').value === 'all';
+        if (recurring && all && !window.confirm('この繰り返し予定をすべて削除します。ほかの日の予定も削除され、元に戻せません。削除しますか？')) return;
+        const next = all ? schedules.filter(item => item.id !== schedule.id) : schedules.map(item => item.id === schedule.id
+            ? { ...item, excludedDates: [...new Set([...(item.excludedDates || []), date])] } : item);
+        try { localStorage.setItem(storageKey, JSON.stringify(next)); }
+        catch { el('scheduleError').textContent = '削除を保存できませんでした。ブラウザーの保存設定・空き容量をご確認ください。'; return; }
+        schedules = next;
+        el('scheduleDialog').close();
+        render();
     }
     function render() {
         el('scheduleCalendarView').hidden = view !== 'calendar';
@@ -178,8 +239,14 @@ export function initSchedules({ root, actions, execute }) {
             const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = schedule.enabled;
             toggle.onchange = () => { schedule.enabled = toggle.checked; persist(); render(); };
             label.append(toggle, document.createTextNode(`${schedule.date}〜 ${repeats[schedule.repeat]}${schedule.repeat === 'once' ? '' : `（${schedule.days.map(d => names[d]).join('・')}）`} ${schedule.start} ${actions[schedule.startType]} → ${schedule.end <= schedule.start ? '翌日 ' : ''}${schedule.end} ${actions[schedule.endType]}`));
+            if (schedule.excludedDates?.length) {
+                const exclusions = document.createElement('span');
+                exclusions.className = 'schedule-exclusions';
+                exclusions.textContent = `除外日：${schedule.excludedDates.join('、')}`;
+                label.append(exclusions);
+            }
             row.append(label);
-            for (const [text, handler] of [['編集', () => open(schedule)], ['削除', () => { schedules = schedules.filter(s => s.id !== schedule.id); persist(); render(); }]]) {
+            for (const [text, handler] of [['編集', () => open(schedule)], ['削除', () => { open(schedule); if (schedule.repeat === 'once') removeSchedule(schedule, dialogDate); else el('scheduleDeleteScope').focus(); }]]) {
                 const button = document.createElement('button'); button.type = 'button'; button.textContent = text; button.onclick = handler; row.append(button);
             }
             list.append(row);
@@ -193,6 +260,13 @@ export function initSchedules({ root, actions, execute }) {
     el('schedulePrev').onclick = () => { month.setMonth(month.getMonth() - 1); render(); };
     el('scheduleNext').onclick = () => { month.setMonth(month.getMonth() + 1); render(); };
     el('scheduleToday').onclick = () => { month = new Date(); month.setDate(1); render(); };
+    el('scheduleNewMode').onclick = () => setDialogMode('new');
+    el('scheduleEditMode').onclick = () => setDialogMode('edit');
+    el('scheduleExisting').onchange = () => setDialogMode('edit', el('scheduleExisting').value);
+    el('scheduleDelete').onclick = () => {
+        const schedule = schedules.find(item => item.id === editing);
+        if (schedule) removeSchedule(schedule, dialogDate);
+    };
     el('scheduleCancel').onclick = () => el('scheduleDialog').close();
     el('scheduleRepeat').onchange = preset;
     el('scheduleForm').onsubmit = event => {
@@ -207,6 +281,7 @@ export function initSchedules({ root, actions, execute }) {
             startType: el('scheduleStartType').value, endType: el('scheduleEndType').value,
             repeat: el('scheduleRepeat').value, days,
             enabled: editing ? schedules.find(s => s.id === editing).enabled : true,
+            excludedDates: editing ? (schedules.find(s => s.id === editing).excludedDates || []) : [],
             updatedAt: Date.now()
         };
         const next = schedules.filter(s => s.id !== editing).concat(schedule);
