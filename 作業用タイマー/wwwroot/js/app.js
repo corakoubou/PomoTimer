@@ -1,7 +1,8 @@
 let state = "paused";
 let logs = [];
 let contStart = null;
-let nextWorkNotificationSeconds = 1500;
+let notificationSettings = { enabled: true, intervalMinutes: 25 };
+let nextWorkNotificationSeconds = notificationIntervalSeconds();
 let draggedLogIndex = null;
 let mainView = "log";
 let scheduleMode = "day";
@@ -101,16 +102,74 @@ function createDefaultBonusSettings() {
 const WORK_CHEER_MESSAGES = [
     "集中ナイス！その積み重ねが未来を変えるよ💪",
     "よくやった！完璧じゃなくてOK、継続が最強🔥",
-    "25分クリア！この調子で次も軽やかにいこう🚀",
+    "いいペース！この調子で次も軽やかにいこう🚀",
     "お疲れさま！一歩ずつ、でも確実に前進してる✨",
     "すごい集中力！このリズムを大事に続けよう🌟"
 ];
 
-function showWorkNotification() {
-    if (!("Notification" in window) || Notification.permission !== "granted") return;
+function notificationIntervalSeconds() {
+    return notificationSettings.intervalMinutes * 60;
+}
 
+function resetNotificationDeadline() {
+    const elapsed = state === "work" && contStart ? Math.max(0, Math.floor((Date.now() - contStart) / 1000)) : 0;
+    nextWorkNotificationSeconds = elapsed + notificationIntervalSeconds();
+}
+
+function renderNotificationSettings() {
+    document.getElementById("notificationsEnabled").checked = notificationSettings.enabled;
+    document.getElementById("notificationInterval").value = notificationSettings.intervalMinutes;
+    const supported = "Notification" in window;
+    const permission = supported ? Notification.permission : "unsupported";
+    const messages = {
+        granted: "ブラウザーの通知は許可されています。",
+        default: "通知を受け取るには「通知を許可」を押してください。",
+        denied: "ブラウザーで通知がブロックされています。このサイトの通知を許可してください。",
+        unsupported: "このブラウザーでは通知を利用できません。"
+    };
+    document.getElementById("notificationPermissionStatus").textContent = messages[permission];
+    document.getElementById("notificationPermissionButton").hidden = !supported || permission !== "default";
+    document.getElementById("notificationSettingsStatus").textContent = notificationSettings.enabled
+        ? `通知はオンです。連続作業中、${notificationSettings.intervalMinutes}分ごとに通知します。`
+        : "通知はオフです。";
+}
+
+async function requestWorkNotificationPermission() {
+    if (!("Notification" in window)) return;
+    try {
+        await Notification.requestPermission();
+        renderNotificationSettings();
+    } catch {
+        document.getElementById("notificationPermissionStatus").textContent = "通知を許可できませんでした。ブラウザーの設定をご確認ください。";
+    }
+}
+
+async function updateNotificationsEnabled(enabled) {
+    notificationSettings.enabled = enabled;
+    resetNotificationDeadline();
+    save();
+    renderNotificationSettings();
+    if (enabled && "Notification" in window && Notification.permission === "default") {
+        await requestWorkNotificationPermission();
+    }
+}
+
+function updateNotificationInterval(value) {
+    const number = Number(value);
+    notificationSettings.intervalMinutes = Number.isFinite(number) ? Math.min(1440, Math.max(1, Math.floor(number))) : 25;
+    resetNotificationDeadline();
+    save();
+    renderNotificationSettings();
+}
+
+function showWorkNotification() {
+    if (!notificationSettings.enabled || !("Notification" in window) || Notification.permission !== "granted") return;
     const msg = WORK_CHEER_MESSAGES[Math.floor(Math.random() * WORK_CHEER_MESSAGES.length)];
-    new Notification("25分経過です。いったん休憩しましょう☕", { body: msg });
+    try {
+        new Notification(`${notificationSettings.intervalMinutes}分ごとの作業通知：いったん休憩しましょう☕`, { body: msg });
+    } catch {
+        document.getElementById("notificationPermissionStatus").textContent = "通知を表示できませんでした。ブラウザーの通知設定をご確認ください。";
+    }
 }
 
 // #region プライベート
@@ -270,7 +329,7 @@ function getRecordedDayCount() {
             logs = [];
             state = "paused";
             contStart = null;
-            nextWorkNotificationSeconds = 1500;
+            nextWorkNotificationSeconds = notificationIntervalSeconds();
             save(); renderLog(); renderStats();
         }
     }
@@ -649,10 +708,10 @@ function changeState(newState, categoryKey = null, categoryLabel = "", at = new 
     if (!isSameState) {
         if (newState === "work") {
             contStart = at.getTime();
-            nextWorkNotificationSeconds = 1500;
+            nextWorkNotificationSeconds = notificationIntervalSeconds();
         } else {
             contStart = null;
-            nextWorkNotificationSeconds = 1500;
+            nextWorkNotificationSeconds = notificationIntervalSeconds();
         }
     }
 
@@ -745,7 +804,7 @@ function updateLogType(index, selectedValue) {
     if (index === getActiveLogIndex()) {
         state = newType;
         contStart = newType === "work" ? Date.now() : null;
-        nextWorkNotificationSeconds = 1500;
+        nextWorkNotificationSeconds = notificationIntervalSeconds();
     }
 
     save();
@@ -969,7 +1028,7 @@ function renderLog() {
             if (logs.length === 0 || wasDeletingActiveLog) {
                 state = "paused";
                 contStart = null;
-                nextWorkNotificationSeconds = 1500;
+                nextWorkNotificationSeconds = notificationIntervalSeconds();
             }
             save();
             renderLog();
@@ -1044,13 +1103,15 @@ function scheduleTypeKey(log) {
 }
 
 function switchMainView(view) {
-    const views = ["log", "schedule", "automation", "restSettings", "bonusSettings"];
+    const views = ["log", "schedule", "automation", "restSettings", "bonusSettings", "notificationSettings"];
     mainView = views.includes(view) ? view : "log";
     document.getElementById("logView").hidden = mainView !== "log";
     document.getElementById("scheduleView").hidden = mainView !== "schedule";
     document.getElementById("automationView").hidden = mainView !== "automation";
     document.getElementById("restSettingsView").hidden = mainView !== "restSettings";
     document.getElementById("bonusSettingsView").hidden = mainView !== "bonusSettings";
+    document.getElementById("notificationSettingsView").hidden = mainView !== "notificationSettings";
+    if (mainView === "notificationSettings") renderNotificationSettings();
     views.forEach(name => {
         const button = document.getElementById(`${name}ViewButton`);
         const active = mainView === name;
@@ -1303,9 +1364,10 @@ function renderStats() {
     let cont = 0;
     if (state === "work" && contStart) {
         cont = Math.floor((Date.now() - contStart) / 1000);
-        while (cont >= nextWorkNotificationSeconds) {
+        if (cont >= nextWorkNotificationSeconds) {
+            // Send at most one notification after background throttling; skip missed intervals.
+            nextWorkNotificationSeconds = cont + notificationIntervalSeconds();
             showWorkNotification();
-            nextWorkNotificationSeconds += 1500;
         }
     }
     document.getElementById("contWork").textContent = format(cont);
@@ -1341,6 +1403,7 @@ function save() {
     localStorage.setItem("workTimerState", state);
     localStorage.setItem("workTimerRestSettings", JSON.stringify(restSettings));
     localStorage.setItem("workTimerBonusSettings", JSON.stringify(bonusSettings));
+    localStorage.setItem("workTimerNotificationSettings", JSON.stringify(notificationSettings));
 
     ["cat-daily", "cat-work"].forEach(id => {
         const el = document.getElementById(id);
@@ -1357,6 +1420,17 @@ function save() {
 
 // 読み込み
 function load() {
+    try {
+        const stored = JSON.parse(localStorage.getItem("workTimerNotificationSettings") || "null");
+        if (stored && typeof stored === "object") {
+            const number = Number(stored.intervalMinutes);
+            notificationSettings = {
+                enabled: typeof stored.enabled === "boolean" ? stored.enabled : true,
+                intervalMinutes: Number.isFinite(number) && number >= 1 ? Math.min(1440, Math.floor(number)) : 25
+            };
+        }
+    } catch { /* Keep the default notification settings if saved data is invalid. */ }
+    nextWorkNotificationSeconds = notificationIntervalSeconds();
     let l = localStorage.getItem("workTimerLogs");
     if (l) {
         logs = JSON.parse(l).map(log => {
@@ -1376,7 +1450,7 @@ function load() {
     if (s) state = s;
 
     const storedMainView = localStorage.getItem("workTimerMainView");
-    mainView = ["log", "schedule", "automation", "restSettings", "bonusSettings"].includes(storedMainView) ? storedMainView : "log";
+    mainView = ["log", "schedule", "automation", "restSettings", "bonusSettings", "notificationSettings"].includes(storedMainView) ? storedMainView : "log";
     const storedStatsPeriod = localStorage.getItem("workTimerStatsPeriod");
     statsPeriod = ["today", "all", "average"].includes(storedStatsPeriod) ? storedStatsPeriod : "all";
     scheduleMode = localStorage.getItem("workTimerScheduleMode") === "week" ? "week" : "day";
@@ -1444,10 +1518,11 @@ window.addEventListener("beforeunload", function (e) {
     e.returnValue = "閉じますか？記録は保存されますが進行中の作業は止まります。";
 });
 
-// 通知許可リクエスト
-if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission();
-}
+// Request permission only through a user action in the notification settings.
+window.addEventListener("focus", () => renderNotificationSettings());
+document.getElementById("notificationsEnabled").addEventListener("change", event => updateNotificationsEnabled(event.target.checked));
+document.getElementById("notificationInterval").addEventListener("change", event => updateNotificationInterval(event.target.value));
+document.getElementById("notificationPermissionButton").addEventListener("click", requestWorkNotificationPermission);
 
 const csvImportInput = document.getElementById("csvImportInput");
 if (csvImportInput) {
@@ -1469,6 +1544,7 @@ if (scheduleDateInput) {
 }
 
 load();
+renderNotificationSettings();
 renderRestSettings();
 renderBonusSettings();
 renderLog();

@@ -1357,3 +1357,8 @@ input.date-edit {
 
 .bonus-setting-row .bonus-name-input { text-align: left; }
 .bonus-setting-row .btn-delete { min-width: 0; padding: .4rem .3rem; }
+
+.notification-settings-card { max-width: 44rem; }
+.notification-enabled, .notification-interval { display: flex; align-items: center; gap: .6rem; margin: 1rem 0; }
+.notification-interval input { width: 6rem; min-width: 0; padding: .4rem; border: 1px solid #686875; border-radius: 5px; background: #24242c; color: #fff; font: inherit; }
+#notificationPermissionButton[hidden] { display: none; }

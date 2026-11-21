@@ -5,7 +5,7 @@
     <title>プライベート用タイマー v3.0</title>
     <meta name="theme-color" content="#007bff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/style.css?v=3.3.12">
+    <link rel="stylesheet" href="./css/style.css?v=3.3.13">
 </head>
 <body>
     <div class="main">
@@ -17,6 +17,7 @@
                     <button type="button" id="automationViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="automationView" onclick="switchMainView('automation')">スケジュール設定</button>
                     <button type="button" id="restSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="restSettingsView" onclick="switchMainView('restSettings')">自由時間の増減設定</button>
                     <button type="button" id="bonusSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="bonusSettingsView" onclick="switchMainView('bonusSettings')">ボーナス時間の設定</button>
+                    <button type="button" id="notificationSettingsViewButton" class="view-switch" role="tab" aria-selected="false" aria-controls="notificationSettingsView" onclick="switchMainView('notificationSettings')">通知設定</button>
                 </div>
                 <div class="toolbar-actions" aria-label="ログ操作">
                     <button type="button" class="btn-log toolbar-action" onclick="exportCSV()">CSV出力</button>
@@ -213,8 +214,20 @@
                     <button type="button" class="btn-settings-reset" onclick="resetBonusSettings()">初期設定に戻す</button>
                 </div>
             </div>
+            <div id="notificationSettingsView" class="rest-settings-view view-panel" role="tabpanel" aria-labelledby="notificationSettingsViewButton" hidden>
+                <div class="rest-settings-card notification-settings-card">
+                    <h2>通知設定</h2>
+                    <p class="settings-help">連続作業中の休憩通知を設定します。アプリを開いている間に動作します。</p>
+                    <label class="notification-enabled"><input type="checkbox" id="notificationsEnabled">作業中の通知をオンにする</label>
+                    <label class="notification-interval">通知間隔（分）<input type="number" id="notificationInterval" min="1" max="1440" step="1" inputmode="numeric"></label>
+                    <p class="settings-help">1〜1440分で指定できます。設定は自動保存されます。オンへの切り替え・間隔の変更後は、その時点から設定した間隔を数えます。</p>
+                    <p id="notificationSettingsStatus" role="status"></p>
+                    <p id="notificationPermissionStatus" role="status"></p>
+                    <button type="button" class="btn-settings-reset" id="notificationPermissionButton">通知を許可</button>
+                </div>
+            </div>
         </section>
     </div>
-    <script src="./js/app.js?v=3.3.12" defer></script>
+    <script src="./js/app.js?v=3.3.13" defer></script>
 </body>
 </html>
